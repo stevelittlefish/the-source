@@ -5,3 +5,23 @@ It is deliberately not a complete edition. The production corpus lives on The Le
 
 It is a truth universally acknowledged that a server in possession of a large
 archive must be in want of a sensible API.
+
+*** START OF THE PROJECT GUTENBERG EBOOK LOCAL TEST FIXTURE ***
+
+LOCAL TEST FIXTURE
+
+Contents
+Chapter One
+Chapter Two
+
+Chapter One
+
+The librarian opened the door and found that someone had returned every book in alphabetical order. This was such an unexpected development that she sat down to consider whether the universe was playing a practical joke.
+
+Outside the window, rain tapped patiently against the glass while a small dog watched the street. Nobody had explained the catalogue to him, but he seemed content with the arrangement.
+
+By evening the visitors had gone home and the lamps cast warm circles across the empty tables. She closed the ledger, pocketed her keys, and left the stories to look after themselves.
+
+*** END OF THE PROJECT GUTENBERG EBOOK LOCAL TEST FIXTURE ***
+
+Synthetic test footer. This is not an actual Gutenberg edition.

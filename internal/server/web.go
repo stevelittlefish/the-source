@@ -14,6 +14,7 @@ var web embed.FS
 var page = template.Must(template.ParseFS(web, "web/page.html"))
 
 func (s *Server) routes() {
+	s.mux.HandleFunc("GET /excerpts", func(w http.ResponseWriter, r *http.Request) { s.page(w, "excerpts", "Random excerpt", 0) })
 	s.mux.HandleFunc("GET /random", func(w http.ResponseWriter, r *http.Request) { s.page(w, "random", "Random book", 0) })
 	assets, _ := fs.Sub(web, "web")
 	s.mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(assets)))

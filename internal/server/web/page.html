@@ -11,6 +11,21 @@
  <a class="skip" href="#main">Skip to content</a>
  <header><a class="brand" href="/books"><b class="mark">S<span>_</span></b> The Source</a><nav aria-label="Main"><a href="/books">Catalogue</a><a href="/books?available=true">Installed texts</a><a href="/random">Random book</a><a href="/api/v1/books">API ↗</a></nav></header>
  <main id="main">
+ <p><a href="/excerpts">Random excerpt ↗</a></p>
+ {{if eq .Kind "excerpts"}}
+ <p class="eyebrow">PROJECT GUTENBERG · BETWEEN THE COVERS</p>
+ <h1>A little less paperwork.<br><em>A little more story.</em></h1>
+ <form action="/excerpts" method="get">
+ <label>Paragraphs<input name="paragraphs" type="number" min="1" max="10" value="3" required></label>
+ <label>Language<select name="language"><option value="en">English</option><option value="all">All languages</option></select></label>
+ <button>Another excerpt ↻</button>
+ </form>
+ <p id="status" role="status">Finding a passage…</p>
+ <h2 id="source-title"></h2><p id="source-author"></p>
+ <section id="excerpt" class="reader" aria-label="Excerpt"></section>
+ <p id="source-links" class="actions"></p>
+ <details><summary>Inspect API response</summary><pre id="json"></pre></details>
+ {{else}}
  {{if eq .Kind "browse"}}
  <p class="eyebrow">PROJECT GUTENBERG · THE CATALOGUE</p>
  <h1>A world of words.<br><em>At your fingertips.</em></h1>
@@ -35,6 +50,7 @@
  <p><a href="/books/{{.ID}}">Book details</a> · <a href="/api/v1/books/{{.ID}}/text">Plain text</a></p>
  <pre id="text" class="reader" aria-label="Book text"></pre>
  <button id="load-more" hidden>Load more text</button>
+ {{end}}
  {{end}}
  {{end}}
  <noscript>This interface needs JavaScript to load the API. You can also <a href="/api/v1/books">browse the JSON API directly</a>.</noscript>

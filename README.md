@@ -42,6 +42,7 @@ GET /api/v1/books?language=en&q=frankenstein&limit=25&cursor=...
 GET /api/v1/books/{id}
 GET /api/v1/books/{id}/text
 GET /api/v1/books/random?language=en
+GET /api/v1/excerpts/random?paragraphs=3
 GET /api/v1/languages
 ```
 
@@ -91,6 +92,32 @@ Search forms and pagination navigate between URLs, so bookmarks and the back
 button work normally. The dark interface shows subjects and text availability,
 and book details include the full API JSON. The reader fetches text in 64 KB
 chunks, with a Load more button for longer works.
+
+## Random excerpts
+
+`GET /api/v1/excerpts/random?paragraphs=3` returns
+`{"book":{...},"paragraphs":["...","...","..."]}`. Paragraph count defaults to
+3 and must be 1–10. English is the default; `language=all` explicitly removes
+the filter. The UI is at `/excerpts`.
+
+The extractor requires Gutenberg START/END markers, removes the wrapper,
+and heuristically rejects headings, contents, credits and copyright matter.
+It chooses a consecutive run of complete prose paragraphs without joining
+across rejected sections. Wrapped lines are joined; paragraph boundaries stay
+intact. Raw book downloads are unchanged.
+
+This is conservative prose detection, not perfect literary understanding:
+short dialogue, poetry, uncased scripts, and some legitimate paragraphs may
+be excluded, and unusual front matter can still resemble prose. Each candidate
+paragraph needs at least 12 whitespace-separated words, sentence punctuation,
+and predominantly lowercase letters. Selection is uniform among qualifying
+windows within a sampled book, not across every paragraph in the library.
+
+Each request tries at most eight installed books and scans at most 8 MiB per
+book, retaining only a small sliding window. Missing markers, oversized input,
+and books without enough suitable paragraphs are skipped. A failed sample
+returns 422 `no_suitable_excerpt`; no installed language matches returns 404.
+The local Austen fixture contains synthetic prose for testing this path.
 
 ## Configuration and deployment
 

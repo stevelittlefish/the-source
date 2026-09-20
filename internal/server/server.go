@@ -103,6 +103,9 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 	}
 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/")
 	switch path {
+	case "excerpts/random":
+		s.excerpt(w, r)
+		return
 	case "books/random":
 		s.random(w, r)
 		return
