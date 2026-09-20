@@ -207,16 +207,13 @@ controls at your existing reverse proxy if exposing it outside your server.
 
 ## Docker
 
-Prepare the writable index directory on The Lemon once:
-
-```sh
-sudo install -d -o root -g root -m 0755 /srv/the-source
-```
-
 ```sh
 docker compose up --build -d
 # Open http://localhost:45068/books
 ```
+
+Compose automatically creates `/srv/the-source` for the writable year index
+if it does not exist; no manual directory setup is needed.
 
 The committed Compose file works on The Lemon without edits. It mounts
 `/mnt/data/gutenberg` read-only at `/data/gutenberg` inside the container:

@@ -8,7 +8,7 @@ services:
         source: /srv/the-source
         target: /var/lib/source
         bind:
-          create_host_path: false
+          create_host_path: true
       # The Lemon's library: metadata and extracted books, under one roof.
       - type: bind
         source: /mnt/data/gutenberg
