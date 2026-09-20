@@ -210,7 +210,7 @@ controls at your existing reverse proxy if exposing it outside your server.
 Prepare the writable index directory on The Lemon once:
 
 ```sh
-sudo install -d -o 65532 -g 65532 -m 0755 /srv/the-source
+sudo install -d -o root -g root -m 0755 /srv/the-source
 ```
 
 ```sh
@@ -244,8 +244,11 @@ uses exactly the same configuration as production; no symlinks are required.
 The override is named `compose.dev.yaml` so it cannot accidentally activate
 on The Lemon.
 
-The container runs as UID/GID 65532:65532; the mounted files must be readable
-and their directories traversable by that user. The supplied container config
+The container runs as root (UID/GID 0:0), with all Linux capabilities dropped
+and privilege escalation disabled. Its root filesystem and library mount stay
+read-only; only the index directory is writable. Keep that directory owned by
+root: dropping capabilities also removes root's normal permission bypass.
+The supplied container config
 listens on port 45068 and uses these fixed mount paths. To customise other
 settings, bind-mount your TOML file read-only over `/etc/source.toml`.
 

@@ -9,8 +9,8 @@ RUN mkdir -p /out/state
 FROM scratch
 COPY --from=build /out/the-source /the-source
 COPY source.docker.toml /etc/source.toml
-COPY --from=build --chown=65532:65532 /out/state/ /var/lib/source/
-USER 65532:65532
+COPY --from=build /out/state/ /var/lib/source/
+USER 0:0
 EXPOSE 45068
 ENTRYPOINT ["/the-source"]
 CMD ["-config", "/etc/source.toml"]
