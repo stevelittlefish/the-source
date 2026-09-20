@@ -91,10 +91,13 @@ one unambiguous four-digit year; uncertain/bracketed and multiple years are
 unknown. Unknown years are excluded when either bound is active. No copyright
 or Gutenberg release-date fallback exists.
 
-Header extraction reads at most 64 KiB per book. Known and unknown years are
-cached in memory until restart. The first year-filtered request can take
-longer while it reads matching installed books' headers. Choose a suitable
-client timeout for a cold library; retrying immediately will not warm it faster.
+Header extraction reads at most 64 KiB per book during startup, before the
+HTTP listener opens. Known and unknown years persist across restarts in the
+configured year index. Unchanged files reuse cached metadata; new/changed files
+are parsed once. Language/year selection uses sorted in-memory indexes and
+binary search with no request-time header reads. The first installation may
+take time to build its index; progress is logged. Docker preserves it in the
+`source-state` named volume. Excerpt extraction still reads selected books.
 
 ## Excerpt quality and bounded retries
 

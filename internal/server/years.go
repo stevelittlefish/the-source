@@ -49,26 +49,9 @@ func originalYear(r io.Reader) int {
 	return year
 }
 
-// Cache known and unknown years for the life of the process. The corpus is
-// indexed at startup; restart after changing its files.
+// Request handling performs no header I/O or locking.
 func (s *Server) publicationYear(id int) int {
-	s.yearMu.Lock()
-	defer s.yearMu.Unlock()
-	if year, ok := s.years[id]; ok {
-		return year
-	}
-	if s.years == nil {
-		s.years = make(map[int]int)
-	}
-	year := 0
-	if path := s.texts[id]; path != "" {
-		if f, err := s.root.Open(path); err == nil {
-			year = originalYear(f)
-			f.Close()
-		}
-	}
-	s.years[id] = year
-	return year
+	return s.years[id]
 }
 func (s *Server) publicationBook(b catalog.Book) catalog.Book {
 	b.OriginalPublicationYear = s.publicationYear(b.ID)
@@ -93,11 +76,4 @@ func parseYears(q url.Values) (yearRange, error) {
 		return years, fmt.Errorf("year_from must not exceed year_to")
 	}
 	return years, nil
-}
-func (s *Server) matchesYears(id int, years yearRange) bool {
-	if years.from == 0 && years.to == 0 {
-		return true
-	}
-	year := s.publicationYear(id)
-	return year != 0 && (years.from == 0 || year >= years.from) && (years.to == 0 || year <= years.to)
 }

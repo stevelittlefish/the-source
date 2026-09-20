@@ -35,6 +35,10 @@ func TestRandomYearFilters(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err := s.prepareYears(s.root.Name(), ""); err != nil {
+		t.Fatal(err)
+	}
+	s.buildPools()
 	for _, endpoint := range []string{"books/random", "excerpts/random"} {
 		for _, tc := range []struct {
 			q    string
@@ -56,6 +60,7 @@ func TestRandomYearFilters(t *testing.T) {
 		}
 	}
 	s.years[1] = 0
+	s.buildPools()
 	for _, endpoint := range []string{"books/random", "excerpts/random"} {
 		for _, tc := range []struct {
 			q    string

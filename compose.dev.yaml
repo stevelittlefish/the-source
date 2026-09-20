@@ -3,6 +3,7 @@ services:
   source:
     # Replace the production mount entirely (Compose 2.24.4+).
     volumes: !override
+      - source-state:/var/lib/source
       - type: bind
         source: ./pg_catalog.csv
         target: /data/gutenberg/pg_catalog.csv

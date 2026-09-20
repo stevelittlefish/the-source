@@ -455,7 +455,7 @@
       "get": {
         "operationId": "randomBook",
         "summary": "Pick a random installed book",
-        "description": "Uniform among installed Text records matching language and optional publication-year bounds. Returns metadata, not book contents. Repeats are allowed. Year headers are cached in process memory; first filtered request can be slow. Availability is a startup snapshot.",
+        "description": "Uniform among installed Text records matching language and optional publication-year bounds. Returns metadata, not book contents. Repeats are allowed. Years are indexed before serving requests and persisted across restarts. Selection uses sorted in-memory indexes with no request-time header I/O. Availability is a startup snapshot.",
         "parameters": [
           {
             "$ref": "#/components/parameters/language"
@@ -500,7 +500,7 @@
       "head": {
         "operationId": "randomBookHead",
         "summary": "Pick a random installed book (headers only)",
-        "description": "Same selection/validation as GET; no response body. Uniform among installed Text records matching language and optional publication-year bounds. Returns metadata, not book contents. Repeats are allowed. Year headers are cached in process memory; first filtered request can be slow. Availability is a startup snapshot.",
+        "description": "Same selection/validation as GET; no response body. Uniform among installed Text records matching language and optional publication-year bounds. Returns metadata, not book contents. Repeats are allowed. Years are indexed before serving requests and persisted across restarts. Selection uses sorted in-memory indexes with no request-time header I/O. Availability is a startup snapshot.",
         "parameters": [
           {
             "$ref": "#/components/parameters/language"

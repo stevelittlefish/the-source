@@ -37,6 +37,7 @@ func TestRandomBook(t *testing.T) {
 	}
 	// Model the startup index with only a multilingual work installed.
 	s.texts = map[int]string{2: "2.txt"}
+	s.buildPools()
 	for _, query := range []string{"", "?language=fr"} {
 		w := httptest.NewRecorder()
 		s.ServeHTTP(w, httptest.NewRequest("GET", "/api/v1/books/random"+query, nil))
@@ -47,6 +48,7 @@ func TestRandomBook(t *testing.T) {
 		}
 	}
 	s.texts = map[int]string{3: "3.txt"}
+	s.buildPools()
 	for _, tc := range []struct {
 		query  string
 		status int

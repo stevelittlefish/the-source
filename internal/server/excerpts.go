@@ -137,26 +137,24 @@ func (s *Server) excerpt(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	candidates := make([]catalog.Book, 0)
 	years, err := parseYears(q)
 	if err != nil {
 		fail(w, 400, "invalid_query", err.Error())
 		return
 	}
-	for _, b := range s.catalog.Search(language, "") {
-		if r.Context().Err() != nil {
-			return
-		}
-		if s.texts[b.ID] != "" && s.matchesYears(b.ID, years) {
-			candidates = append(candidates, b)
-		}
-	}
+	candidates := s.selection(language, years)
 	if len(candidates) == 0 {
 		fail(w, 404, "no_matching_books", "No installed texts match these filters.")
 		return
 	}
-	rand.Shuffle(len(candidates), func(i, j int) { candidates[i], candidates[j] = candidates[j], candidates[i] })
-	for _, b := range candidates[:min(8, len(candidates))] {
+	seen := make(map[int]bool)
+	for len(seen) < min(8, len(candidates)) {
+		i := rand.IntN(len(candidates))
+		if seen[i] {
+			continue
+		}
+		seen[i] = true
+		b := candidates[i]
 		if r.Context().Err() != nil {
 			return
 		}

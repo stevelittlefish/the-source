@@ -126,10 +126,19 @@ when either bound is supplied. No Gutenberg release-date or copyright-date
 fallback is used. A known year appears as `original_publication_year` in
 random-book, excerpt-source and individual-book responses.
 
-Header reads are bounded to 64 KiB and cached in memory (including unknown
-years). The first filtered request scans matching installed books' headers,
-so it may be slow on a large corpus; later requests reuse the index.
-Restart to refresh it after changing books. No extra writable Docker mount
+Header reads are bounded to 64 KiB and indexed **before serving requests**.
+The first startup builds a persistent index, logging progress and checkpointing
+every 2,000 books. Restarts reuse known and unknown years for unchanged files;
+only new or changed files (path, size or modification time) need header reads.
+Year/language selection uses sorted in-memory pools and binary search, with no
+request-time header reads or global lock. Excerpts still read their selected
+books to find prose.
+
+`year_index_path` defaults to `data/year-index.json` relative to the config.
+Docker uses `/var/lib/source/year-index.json` in the persistent `source-state`
+named volume. Keep that volume when rebuilding/restarting; `docker compose
+down -v` deletes it and forces a rebuild. The book mount remains read-only.
+Restart after corpus changes; remove only the index file if a forced rebuild
 is needed. Both random UI pages provide optional year controls.
 
 `GET /api/v1/excerpts/random?paragraphs=3` returns
@@ -189,7 +198,8 @@ The mirror layout is `<books_dir>/<id>/pg<id>.txt`; for example,
 both exist. Indexing lists the corpus root and checks those exact candidate
 paths without recursively walking the archive or opening book contents.
 The corpus index is built from filenames at startup; restart after changing it
-or replacing the metadata. No book contents are read during indexing.
+or replacing the metadata. Header parsing for new/changed books also happens
+at startup; complete book contents are not loaded.
 
 The service is read-only and has no authentication. Configure TLS/access
 controls at your existing reverse proxy if exposing it outside your server.

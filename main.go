@@ -27,7 +27,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	app, err := server.New(books, c.BooksDir)
+	app, err := server.New(books, c.BooksDir, c.YearIndexPath)
 	if err != nil {
 		log.Fatal(err)
 	}

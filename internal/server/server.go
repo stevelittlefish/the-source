@@ -11,14 +11,13 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/stevelittlefish/the-source/internal/catalog"
 )
 
 type Server struct {
-	yearMu  sync.Mutex
 	years   map[int]int
+	pools   map[string][]catalog.Book
 	catalog *catalog.Catalog
 	root    *os.Root
 	mux     *http.ServeMux
@@ -30,13 +29,13 @@ type bookResponse struct {
 	Available bool `json:"available"`
 }
 
-func New(c *catalog.Catalog, dir string) (*Server, error) {
+func New(c *catalog.Catalog, dir string, indexPaths ...string) (*Server, error) {
 	root, err := os.OpenRoot(dir)
 	if err != nil {
 		return nil, fmt.Errorf("open corpus: %w", err)
 	}
 	s := &Server{catalog: c, root: root, mux: http.NewServeMux(), texts: make(map[int]string)}
-	// Inspect names only once. No book contents are read during startup.
+	// Discover paths without loading book bodies; persistent header indexing follows.
 	f, err := root.Open(".")
 	if err != nil {
 		root.Close()
@@ -68,6 +67,15 @@ func New(c *catalog.Catalog, dir string) (*Server, error) {
 			}
 		}
 	}
+	indexPath := ""
+	if len(indexPaths) > 0 {
+		indexPath = indexPaths[0]
+	}
+	if err := s.prepareYears(dir, indexPath); err != nil {
+		root.Close()
+		return nil, err
+	}
+	s.buildPools()
 	s.mux.HandleFunc("/api/", s.api)
 	s.mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" && r.Method != "HEAD" {
@@ -256,29 +264,15 @@ func (s *Server) random(w http.ResponseWriter, r *http.Request) {
 		fail(w, 400, "invalid_query", err.Error())
 		return
 	}
-	var chosen catalog.Book
 	years, err := parseYears(q)
 	if err != nil {
 		fail(w, 400, "invalid_query", err.Error())
 		return
 	}
-	count := 0
-	// Reservoir sampling gives each installed matching work an equal chance.
-	for _, book := range s.catalog.Search(language, "") {
-		if r.Context().Err() != nil {
-			return
-		}
-		if s.texts[book.ID] == "" || !s.matchesYears(book.ID, years) {
-			continue
-		}
-		count++
-		if rand.IntN(count) == 0 {
-			chosen = book
-		}
-	}
-	if count == 0 {
+	pool := s.selection(language, years)
+	if len(pool) == 0 {
 		fail(w, 404, "no_matching_books", "No installed texts match these filters.")
 		return
 	}
-	respond(w, 200, bookResponse{s.publicationBook(chosen), true})
+	respond(w, 200, bookResponse{pool[rand.IntN(len(pool))], true})
 }

@@ -11,9 +11,10 @@ import (
 )
 
 type Config struct {
-	CatalogPath string `toml:"catalog_path"`
-	BooksDir    string `toml:"books_dir"`
-	ServerAddr  string `toml:"server_addr"`
+	YearIndexPath string `toml:"year_index_path"`
+	CatalogPath   string `toml:"catalog_path"`
+	BooksDir      string `toml:"books_dir"`
+	ServerAddr    string `toml:"server_addr"`
 }
 
 // Relative paths follow the configuration file. Changing directory should not
@@ -36,6 +37,12 @@ func Load(path string) (Config, error) {
 	}
 	if !filepath.IsAbs(c.BooksDir) {
 		c.BooksDir = filepath.Join(filepath.Dir(path), c.BooksDir)
+	}
+	if c.YearIndexPath == "" {
+		c.YearIndexPath = "data/year-index.json"
+	}
+	if !filepath.IsAbs(c.YearIndexPath) {
+		c.YearIndexPath = filepath.Join(filepath.Dir(path), c.YearIndexPath)
 	}
 	return c, nil
 }
