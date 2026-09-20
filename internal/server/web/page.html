@@ -4,6 +4,7 @@
  <meta charset="utf-8">
  <meta name="viewport" content="width=device-width,initial-scale=1">
  <title>{{.Title}} · The Source</title>
+ <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
  <link rel="stylesheet" href="/static/style.css">
  {{if eq .Kind "random"}}<script src="/static/book.js" type="module"></script>{{else if ne .Kind "index"}}<script src="/static/{{.Kind}}.js" type="module"></script>{{end}}
 </head>
