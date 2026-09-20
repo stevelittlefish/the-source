@@ -1,0 +1,3 @@
+catalog_path = "/data/pg_catalog.csv"
+books_dir = "/books"
+server_addr = ":45068"

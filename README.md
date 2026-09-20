@@ -97,14 +97,41 @@ go build -o the-source .
 ```
 
 Templates, JavaScript and CSS are embedded in the binary. Supply the catalog,
-configuration and corpus separately. This release expects **flat**
-`<books_dir>/<id>.txt` paths; it does not unpack or understand the unknown
-archive format on The Lemon yet. Confirm that layout before production use.
+configuration and corpus separately. Set `books_dir` to The Lemon's
+`cache/epub` directory, using its actual absolute path:
+
+```toml
+books_dir = "/path/to/gutenberg/cache/epub"
+```
+
+The mirror layout is `<books_dir>/<id>/pg<id>.txt`; for example,
+`51177/pg51177.txt`. Local fixtures use the same structure. Flat
+`<books_dir>/<id>.txt` files also work; the mirror copy takes precedence if
+both exist. Indexing lists the corpus root and checks those exact candidate
+paths without recursively walking the archive or opening book contents.
 The corpus index is built from filenames at startup; restart after changing it
 or replacing the metadata. No book contents are read during indexing.
 
 The service is read-only and has no authentication. Configure TLS/access
 controls at your existing reverse proxy if exposing it outside your server.
+
+## Docker
+
+```sh
+docker compose up --build -d
+# Open http://localhost:45068/books
+```
+
+Compose defaults to the tiny local fixtures. On The Lemon, change the first
+bind mount's `source` in `compose.yaml` to the absolute path of
+`cache/epub`. Its container target stays `/books`. The metadata CSV is mounted
+separately at `/data/pg_catalog.csv`. Both mounts are read-only, and neither
+books nor metadata are baked into the image.
+
+The container runs as UID/GID 65532:65532; the mounted files must be readable
+and their directories traversable by that user. The supplied container config
+listens on port 45068 and uses these fixed mount paths. To customise other
+settings, bind-mount your TOML file read-only over `/etc/source.toml`.
 
 ## Development
 
@@ -127,11 +154,11 @@ kept as CSV rather than imported into a database: it is only about 21 MB and
 The record count is lower than the line count because titles can span lines.
 At startup, The Source parses it and prepares lookup and metadata-search data.
 
-Before deploying, inspect The Lemon's corpus layout and configure its
-Gutenberg-ID-to-text-file resolver. Local tests use small text fixtures instead.
+The Lemon's `cache/epub/<id>/pg<id>.txt` layout is supported directly.
+Local tests use small text fixtures in the same layout.
 
 ## Status
 
 Browse, metadata search, individual records, fixture text streaming, and the
-browser UI are implemented. Next: confirm The Lemon's archive format and add
-random data fetching. The books remain patiently unaware.
+browser UI are implemented, including The Lemon's mirror layout.
+Next: random data fetching. The books remain patiently unaware.

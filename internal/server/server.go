@@ -14,10 +14,10 @@ import (
 )
 
 type Server struct {
-	catalog   *catalog.Catalog
-	root      *os.Root
-	mux       *http.ServeMux
-	available map[int]bool
+	catalog *catalog.Catalog
+	root    *os.Root
+	mux     *http.ServeMux
+	texts   map[int]string
 }
 
 type bookResponse struct {
@@ -30,7 +30,7 @@ func New(c *catalog.Catalog, dir string) (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open corpus: %w", err)
 	}
-	s := &Server{catalog: c, root: root, mux: http.NewServeMux(), available: make(map[int]bool)}
+	s := &Server{catalog: c, root: root, mux: http.NewServeMux(), texts: make(map[int]string)}
 	// Inspect names only once. No book contents are read during startup.
 	f, err := root.Open(".")
 	if err != nil {
@@ -44,11 +44,22 @@ func New(c *catalog.Catalog, dir string) (*Server, error) {
 		return nil, err
 	}
 	for _, entry := range entries {
-		id, err := strconv.Atoi(strings.TrimSuffix(entry.Name(), ".txt"))
-		if err == nil && id > 0 && entry.Name() == strconv.Itoa(id)+".txt" {
-			info, err := root.Stat(entry.Name())
-			if err == nil && info.Mode().IsRegular() {
-				s.available[id] = true
+		name := entry.Name()
+		number := strings.TrimSuffix(name, ".txt")
+		id, err := strconv.Atoi(number)
+		if err != nil || id < 1 || number != strconv.Itoa(id) {
+			continue
+		}
+		path := name
+		nested := name == number
+		if nested {
+			path = number + "/pg" + number + ".txt"
+		}
+		info, err := root.Stat(path)
+		if err == nil && info.Mode().IsRegular() {
+			// Prefer the mirror copy when both layouts contain the same ID.
+			if nested || s.texts[id] == "" {
+				s.texts[id] = path
 			}
 		}
 	}
@@ -113,14 +124,14 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(parts) == 2 {
-		respond(w, 200, bookResponse{b, s.available[id]})
+		respond(w, 200, bookResponse{b, s.texts[id] != ""})
 		return
 	}
-	if !s.available[id] {
+	if s.texts[id] == "" {
 		fail(w, 404, "text_unavailable", "This book's text is not installed.")
 		return
 	}
-	f, err := s.root.Open(strconv.Itoa(id) + ".txt")
+	f, err := s.root.Open(s.texts[id])
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			fail(w, 404, "text_unavailable", "This book's text is not installed.")
@@ -187,7 +198,7 @@ func (s *Server) list(w http.ResponseWriter, r *http.Request) {
 	items := make([]bookResponse, 0, limit)
 	total := 0
 	for _, b := range matched {
-		available := s.available[b.ID]
+		available := s.texts[b.ID] != ""
 		if q.Has("available") && available != (q.Get("available") == "true") {
 			continue
 		}

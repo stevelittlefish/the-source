@@ -1,0 +1,26 @@
+services:
+  source:
+    build: .
+    ports:
+      - "45068:45068"
+    volumes:
+      # Change the host path to The Lemon's actual cache/epub directory.
+      - type: bind
+        source: ./testdata/books
+        target: /books
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./pg_catalog.csv
+        target: /data/pg_catalog.csv
+        read_only: true
+        bind:
+          create_host_path: false
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    stop_grace_period: 15s

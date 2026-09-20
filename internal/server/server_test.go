@@ -106,7 +106,7 @@ func TestCorpusSymlinkCannotEscape(t *testing.T) {
 	if err := s.root.Symlink(outside, "2.txt"); err != nil {
 		t.Fatal(err)
 	}
-	s.available[2] = true
+	s.texts[2] = "2.txt"
 	w := httptest.NewRecorder()
 	s.ServeHTTP(w, httptest.NewRequest("GET", "/api/v1/books/2/text", nil))
 	if w.Code == 200 || strings.Contains(w.Body.String(), "private") {
