@@ -1,4 +1,6 @@
 # Explicit opt-in: the committed default belongs to The Lemon.
+volumes:
+  source-state:
 services:
   source:
     # Replace the production mount entirely (Compose 2.24.4+).

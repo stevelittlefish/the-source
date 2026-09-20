@@ -4,7 +4,11 @@ services:
     ports:
       - "45068:45068"
     volumes:
-      - source-state:/var/lib/source
+      - type: bind
+        source: /srv/the-source
+        target: /var/lib/source
+        bind:
+          create_host_path: false
       # The Lemon's library: metadata and extracted books, under one roof.
       - type: bind
         source: /mnt/data/gutenberg
@@ -19,5 +23,3 @@ services:
       - no-new-privileges:true
     restart: unless-stopped
     stop_grace_period: 15s
-volumes:
-  source-state:

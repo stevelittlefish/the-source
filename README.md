@@ -135,9 +135,10 @@ request-time header reads or global lock. Excerpts still read their selected
 books to find prose.
 
 `year_index_path` defaults to `data/year-index.json` relative to the config.
-Docker uses `/var/lib/source/year-index.json` in the persistent `source-state`
-named volume. Keep that volume when rebuilding/restarting; `docker compose
-down -v` deletes it and forces a rebuild. The book mount remains read-only.
+Docker stores the index at `/srv/the-source/year-index.json` on The Lemon,
+bind-mounted at `/var/lib/source` in the container. This survives container
+rebuilds and removal. The development override uses a `source-state` named
+volume instead. The book mount remains read-only.
 Restart after corpus changes; remove only the index file if a forced rebuild
 is needed. Both random UI pages provide optional year controls.
 
@@ -205,6 +206,26 @@ The service is read-only and has no authentication. Configure TLS/access
 controls at your existing reverse proxy if exposing it outside your server.
 
 ## Docker
+
+Prepare the writable index directory on The Lemon once:
+
+```sh
+sudo install -d -o 65532 -g 65532 -m 0755 /srv/the-source
+```
+
+To preserve an index from the previous named-volume setup, stop the service
+before copying it (adjust the volume name if your Compose project differs):
+
+```sh
+docker compose stop source
+docker volume inspect the-source_source-state --format '{{.Mountpoint}}'
+# Use the actual mountpoint printed above:
+sudo cp /var/lib/docker/volumes/the-source_source-state/_data/year-index.json /srv/the-source/year-index.json
+sudo chown 65532:65532 /srv/the-source/year-index.json
+```
+
+Skip the copy if no index exists yet; the service will build one. Leave the old
+volume in place until the new deployment has successfully reused the index.
 
 ```sh
 docker compose up --build -d

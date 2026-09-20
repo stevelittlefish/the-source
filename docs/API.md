@@ -97,7 +97,8 @@ configured year index. Unchanged files reuse cached metadata; new/changed files
 are parsed once. Language/year selection uses sorted in-memory indexes and
 binary search with no request-time header reads. The first installation may
 take time to build its index; progress is logged. Docker preserves it in the
-`source-state` named volume. Excerpt extraction still reads selected books.
+`/srv/the-source` host directory (the dev override uses a named volume).
+Excerpt extraction still reads selected books.
 
 ## Excerpt quality and bounded retries
 
