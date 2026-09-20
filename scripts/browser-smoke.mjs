@@ -14,6 +14,8 @@ for (const [path,expected] of [
  ['/books/1342', 'Read this book'],
  ['/read/1342', 'LOCAL DEVELOPMENT FIXTURE'],
  ['/books/1342', '"locc":'],
+ ['/random', 'Permanent book page'],
+ ['/random?language=zz', 'No installed texts match this language.'],
 ]) {
  const profile = mkdtempSync(join(tmpdir(),'source-browser-'));
  try {

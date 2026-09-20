@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/rand/v2"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -101,6 +103,9 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 	}
 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/")
 	switch path {
+	case "books/random":
+		s.random(w, r)
+		return
 	case "books":
 		s.list(w, r)
 		return
@@ -159,15 +164,10 @@ func (s *Server) list(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	language := "en"
-	if q.Has("language") {
-		language = strings.TrimSpace(q.Get("language"))
-		if language == "all" {
-			language = ""
-		} else if language == "" {
-			fail(w, 400, "invalid_query", "Use language=all for all languages.")
-			return
-		}
+	language, languageErr := queryLanguage(q)
+	if languageErr != nil {
+		fail(w, 400, "invalid_query", languageErr.Error())
+		return
 	}
 	limit := 25
 	var err error
@@ -216,4 +216,55 @@ func (s *Server) list(w http.ResponseWriter, r *http.Request) {
 		Total int            `json:"total"`
 		Next  string         `json:"next_cursor"`
 	}{items, total, next})
+}
+
+// Removing the language filter must be deliberate, even before coffee.
+func queryLanguage(q url.Values) (string, error) {
+	if !q.Has("language") {
+		return "en", nil
+	}
+	if len(q["language"]) != 1 {
+		return "", fmt.Errorf("Specify language once.")
+	}
+	language := strings.ToLower(strings.TrimSpace(q.Get("language")))
+	if language == "" {
+		return "", fmt.Errorf("Use language=all for all languages.")
+	}
+	if language == "all" {
+		return "", nil
+	}
+	return language, nil
+}
+
+func (s *Server) random(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	q := r.URL.Query()
+	for key := range q {
+		if key != "language" {
+			fail(w, 400, "invalid_query", "Only language is supported for random books.")
+			return
+		}
+	}
+	language, err := queryLanguage(q)
+	if err != nil {
+		fail(w, 400, "invalid_query", err.Error())
+		return
+	}
+	var chosen catalog.Book
+	count := 0
+	// Reservoir sampling gives each installed matching work an equal chance.
+	for _, book := range s.catalog.Search(language, "") {
+		if s.texts[book.ID] == "" {
+			continue
+		}
+		count++
+		if rand.IntN(count) == 0 {
+			chosen = book
+		}
+	}
+	if count == 0 {
+		fail(w, 404, "no_matching_books", "No installed texts match this language.")
+		return
+	}
+	respond(w, 200, bookResponse{chosen, true})
 }

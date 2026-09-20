@@ -5,11 +5,11 @@
  <meta name="viewport" content="width=device-width,initial-scale=1">
  <title>{{.Title}} · The Source</title>
  <link rel="stylesheet" href="/static/style.css">
- <script src="/static/{{.Kind}}.js" type="module"></script>
+ {{if eq .Kind "random"}}<script src="/static/book.js" type="module"></script>{{else}}<script src="/static/{{.Kind}}.js" type="module"></script>{{end}}
 </head>
 <body data-id="{{.ID}}">
  <a class="skip" href="#main">Skip to content</a>
- <header><a class="brand" href="/books"><b class="mark">S<span>_</span></b> The Source</a><nav aria-label="Main"><a href="/books">Catalogue</a><a href="/books?available=true">Installed texts</a><a href="/api/v1/books">API ↗</a></nav></header>
+ <header><a class="brand" href="/books"><b class="mark">S<span>_</span></b> The Source</a><nav aria-label="Main"><a href="/books">Catalogue</a><a href="/books?available=true">Installed texts</a><a href="/random">Random book</a><a href="/api/v1/books">API ↗</a></nav></header>
  <main id="main">
  {{if eq .Kind "browse"}}
  <p class="eyebrow">PROJECT GUTENBERG · THE CATALOGUE</p>
@@ -26,11 +26,12 @@
  <nav id="pagination" aria-label="Results pages"></nav>
  {{else}}
  <a href="/books">← Browse the library</a>
- <p class="eyebrow">PROJECT GUTENBERG · BOOK {{.ID}}</p>
+ {{if eq .Kind "random"}}<form action="/random" method="get"><label>Language<select name="language"><option value="en">English</option><option value="all">All languages</option></select></label><button>Pick another book ↻</button><span class="muted">Installed texts only. Serendipity included.</span></form>{{end}}
+ <p class="eyebrow">PROJECT GUTENBERG · BOOK <span id="book-id">{{.ID}}</span></p>
  <h1 id="title">Opening book…</h1>
  <p id="author"></p>
  <p id="status" role="status"></p>
- {{if eq .Kind "book"}}<p id="actions" class="actions"></p><div class="detail-grid"><section class="panel"><h2>Inside the record</h2><dl id="metadata"></dl></section><section class="panel"><p class="eyebrow">UNDER THE HOOD</p><h2>The actual data.</h2><p class="muted">Straight from the API. No literary embellishment.</p><pre id="json" tabindex="0" aria-label="Book API JSON">Loading record…</pre></section></div>{{else}}
+ {{if or (eq .Kind "book") (eq .Kind "random")}}<p id="actions" class="actions"></p><div class="detail-grid"><section class="panel"><h2>Inside the record</h2><dl id="metadata"></dl></section><section class="panel"><p class="eyebrow">UNDER THE HOOD</p><h2>The actual data.</h2><p class="muted">Straight from the API. No literary embellishment.</p><pre id="json" tabindex="0" aria-label="Book API JSON">Loading record…</pre></section></div>{{else}}
  <p><a href="/books/{{.ID}}">Book details</a> · <a href="/api/v1/books/{{.ID}}/text">Plain text</a></p>
  <pre id="text" class="reader" aria-label="Book text"></pre>
  <button id="load-more" hidden>Load more text</button>

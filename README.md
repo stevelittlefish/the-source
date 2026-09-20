@@ -41,11 +41,24 @@ GET /health
 GET /api/v1/books?language=en&q=frankenstein&limit=25&cursor=...
 GET /api/v1/books/{id}
 GET /api/v1/books/{id}/text
+GET /api/v1/books/random?language=en
 GET /api/v1/languages
 ```
 
 English is the default browse language. The service will distinguish a missing
 catalogue record from a catalogued book whose text is not installed locally.
+
+Random selection also defaults to English. `GET /api/v1/books/random`
+returns one book record, uniformly selected from installed text records.
+Use `?language=fr` for another language or explicitly `?language=all` to
+remove the filter. Empty language values are rejected. No matches returns
+404 `no_matching_books`; responses are not cached. Repeats are possible:
+randomness has no recollection of your previous literary disappointment.
+
+The **Random book** page at `/random` calls this API and shows metadata,
+JSON, read/download links, a permanent book link, and a language selector.
+Language defaults apply to selection endpoints; fetching a specific ID still
+retrieves that book regardless of language.
 
 - `language=en` includes multilingual works containing English; use
   `language=all` to remove the language filter.
@@ -183,4 +196,5 @@ Local tests use small text fixtures in the same layout.
 
 Browse, metadata search, individual records, fixture text streaming, and the
 browser UI are implemented, including The Lemon's mirror layout.
-Next: random data fetching. The books remain patiently unaware.
+Random installed-book selection is also implemented. The books remain
+patiently unaware.

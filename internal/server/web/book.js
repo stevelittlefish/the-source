@@ -1,6 +1,18 @@
 import {getJSON,node,link,failure} from './common.js';
 try {
- const book = await getJSON('/api/v1/books/' + document.body.dataset.id);
+ const random = location.pathname === '/random';
+ const params = new URLSearchParams(location.search);
+ if (random) {
+  const select = document.querySelector('select[name="language"]');
+  const language = params.get('language') || 'en';
+  if (![...select.options].some(option => option.value === language)) select.add(new Option(language,language));
+  select.value = language;
+  getJSON('/api/v1/languages').then(data => {
+   for (const code of data.languages) if (![...select.options].some(option => option.value === code)) select.add(new Option(code,code));
+  }).catch(() => {});
+ }
+ const book = await getJSON(random ? '/api/v1/books/random?' + params : '/api/v1/books/' + document.body.dataset.id);
+ document.querySelector('#book-id').textContent = book.id;
  document.title = book.title + ' · The Source';
  document.querySelector('#title').textContent = book.title;
  document.querySelector('#author').textContent = book.authors;
@@ -11,6 +23,7 @@ try {
   metadata.append(node('dt',name),node('dd',value || '—'));
  }
  const actions = document.querySelector('#actions');
+ if (random) actions.append(link('Permanent book page','/books/' + book.id));
  if (book.available) {
   const read = link('Read this book →','/read/' + book.id);
   read.className = 'button';
@@ -20,4 +33,8 @@ try {
   actions.append(read,download);
  }
  actions.append(link('View API record','/api/v1/books/' + book.id));
-} catch(error) { failure(error); }
+} catch(error) {
+ failure(error);
+ document.querySelector('#title').textContent = 'No book to show';
+ document.querySelector('#json').textContent = error.message;
+}
