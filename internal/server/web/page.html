@@ -18,7 +18,7 @@
  <form action="/excerpts" method="get">
  <label>Paragraphs<input name="paragraphs" type="number" min="1" max="10" value="3" required></label>
  <label>Language<select name="language"><option value="en">English</option><option value="all">All languages</option></select></label>
- <button>Another excerpt ↻</button>
+ {{template "years" .}}<button>Another excerpt ↻</button>
  </form>
  <p id="status" role="status">Finding a passage…</p>
  <h2 id="source-title"></h2><p id="source-author"></p>
@@ -41,7 +41,7 @@
  <nav id="pagination" aria-label="Results pages"></nav>
  {{else}}
  <a href="/books">← Browse the library</a>
- {{if eq .Kind "random"}}<form action="/random" method="get"><label>Language<select name="language"><option value="en">English</option><option value="all">All languages</option></select></label><button>Pick another book ↻</button><span class="muted">Installed texts only. Serendipity included.</span></form>{{end}}
+ {{if eq .Kind "random"}}<form action="/random" method="get"><label>Language<select name="language"><option value="en">English</option><option value="all">All languages</option></select></label>{{template "years" .}}<button>Pick another book ↻</button><span class="muted">Installed texts only. Serendipity included.</span></form>{{end}}
  <p class="eyebrow">PROJECT GUTENBERG · BOOK <span id="book-id">{{.ID}}</span></p>
  <h1 id="title">Opening book…</h1>
  <p id="author"></p>
@@ -58,3 +58,4 @@
  <footer>The Source · Books on tap. No subscription to your own curiosity.</footer>
 </body>
 </html>
+{{define "years"}}<label>Publication year from<input name="year_from" type="number" min="1" max="9999" placeholder="Any"></label><label>Publication year to<input name="year_to" type="number" min="1" max="9999" placeholder="Any"></label>{{end}}

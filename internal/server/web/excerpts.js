@@ -1,6 +1,7 @@
-import {getJSON,node,link,failure} from './common.js';
+import {getJSON,node,link,failure,yearFilters} from './common.js';
 const params = new URLSearchParams(location.search);
 const form = document.querySelector('form');
+yearFilters(form,params);
 form.elements.paragraphs.value = params.get('paragraphs') || '3';
 const language = params.get('language') || 'en';
 const select = form.elements.language;
@@ -12,7 +13,7 @@ getJSON('/api/v1/languages').then(data => {
 try {
  const data = await getJSON('/api/v1/excerpts/random?' + params);
  document.querySelector('#source-title').textContent = data.book.title;
- document.querySelector('#source-author').textContent = data.book.authors;
+ document.querySelector('#source-author').textContent = data.book.authors + ' · Original publication: ' + (data.book.original_publication_year || 'unknown');
  document.querySelector('#status').textContent = data.paragraphs.length + ' complete paragraphs · ' + data.book.languages.join(', ');
  document.querySelector('#excerpt').append(...data.paragraphs.map(p => node('p',p)));
  document.querySelector('#source-links').append(link('Book details','/books/' + data.book.id),link('Read the book →','/read/' + data.book.id));

@@ -95,6 +95,29 @@ chunks, with a Load more button for longer works.
 
 ## Random excerpts
 
+Both random endpoints accept inclusive original-publication year bounds:
+
+```text
+/api/v1/books/random?year_from=1901&year_to=1950
+/api/v1/excerpts/random?paragraphs=3&year_from=1901
+```
+
+Use 1901 for “after 1900”, or 1900 for “1900 onwards”. Either bound may be
+omitted; supplied years must be 1–9999 and from must not exceed to. English
+remains the default, independently of year filters.
+
+Years come only from the explicit `Original publication:` header field.
+Missing, ambiguous or bracketed/uncertain years are unknown, and excluded
+when either bound is supplied. No Gutenberg release-date or copyright-date
+fallback is used. A known year appears as `original_publication_year` in
+random-book, excerpt-source and individual-book responses.
+
+Header reads are bounded to 64 KiB and cached in memory (including unknown
+years). The first filtered request scans matching installed books' headers,
+so it may be slow on a large corpus; later requests reuse the index.
+Restart to refresh it after changing books. No extra writable Docker mount
+is needed. Both random UI pages provide optional year controls.
+
 `GET /api/v1/excerpts/random?paragraphs=3` returns
 `{"book":{...},"paragraphs":["...","...","..."]}`. Paragraph count defaults to
 3 and must be 1–10. English is the default; `language=all` explicitly removes

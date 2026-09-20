@@ -1,8 +1,9 @@
-import {getJSON,node,link,failure} from './common.js';
+import {getJSON,node,link,failure,yearFilters} from './common.js';
 try {
  const random = location.pathname === '/random';
  const params = new URLSearchParams(location.search);
  if (random) {
+  yearFilters(document.querySelector('form'),params);
   const select = document.querySelector('select[name="language"]');
   const language = params.get('language') || 'en';
   if (![...select.options].some(option => option.value === language)) select.add(new Option(language,language));
@@ -18,6 +19,7 @@ try {
  document.querySelector('#author').textContent = book.authors;
  document.querySelector('#status').textContent = book.available ? 'Text installed and ready to read.' : 'Catalogue only. This text is not installed in this library.';
  const metadata = document.querySelector('#metadata');
+ metadata.append(node('dt','Original publication year'),node('dd',book.original_publication_year || 'Unknown'));
  document.querySelector('#json').textContent = JSON.stringify(book,null,2);
  for (const [name,value] of [['Gutenberg ID',String(book.id)],['Type',book.type],['Languages',book.languages.join(', ')],['Issued',book.issued],['Library of Congress',book.locc.join(', ')],['Subjects',book.subjects.join(' · ')],['Bookshelves',book.bookshelves.join(' · ')]]) {
   metadata.append(node('dt',name),node('dd',value || '—'));

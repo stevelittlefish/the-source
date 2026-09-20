@@ -119,8 +119,8 @@ func (s *Server) excerpt(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	q := r.URL.Query()
 	for key, v := range q {
-		if (key != "language" && key != "paragraphs") || len(v) != 1 {
-			fail(w, 400, "invalid_query", "Use language and paragraphs once each.")
+		if (key != "language" && key != "paragraphs" && key != "year_from" && key != "year_to") || len(v) != 1 {
+			fail(w, 400, "invalid_query", "Use language, paragraphs, year_from and year_to once each.")
 			return
 		}
 	}
@@ -138,13 +138,21 @@ func (s *Server) excerpt(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	candidates := make([]catalog.Book, 0)
+	years, err := parseYears(q)
+	if err != nil {
+		fail(w, 400, "invalid_query", err.Error())
+		return
+	}
 	for _, b := range s.catalog.Search(language, "") {
-		if s.texts[b.ID] != "" {
+		if r.Context().Err() != nil {
+			return
+		}
+		if s.texts[b.ID] != "" && s.matchesYears(b.ID, years) {
 			candidates = append(candidates, b)
 		}
 	}
 	if len(candidates) == 0 {
-		fail(w, 404, "no_matching_books", "No installed texts match this language.")
+		fail(w, 404, "no_matching_books", "No installed texts match these filters.")
 		return
 	}
 	rand.Shuffle(len(candidates), func(i, j int) { candidates[i], candidates[j] = candidates[j], candidates[i] })
@@ -164,7 +172,7 @@ func (s *Server) excerpt(w http.ResponseWriter, r *http.Request) {
 		respond(w, 200, struct {
 			Book       catalog.Book `json:"book"`
 			Paragraphs []string     `json:"paragraphs"`
-		}{b, paragraphs})
+		}{s.publicationBook(b), paragraphs})
 		return
 	}
 	fail(w, 422, "no_suitable_excerpt", "No suitable prose found in the sampled books. Try again or request fewer paragraphs.")

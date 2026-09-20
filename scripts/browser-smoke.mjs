@@ -16,7 +16,10 @@ for (const [path,expected] of [
  ['/books/1342', '"locc":'],
  ['/random', 'Permanent book page'],
  ['/excerpts', '3 complete paragraphs'],
- ['/random?language=zz', 'No installed texts match this language.'],
+ ['/random?language=zz', 'No installed texts match these filters.'],
+ ['/random?year_from=1901&year_to=1950', 'Original publication year'],
+ ['/excerpts?year_from=1901&year_to=1950', '3 complete paragraphs'],
+ ['/excerpts?year_to=1900', 'No installed texts match these filters.'],
 ]) {
  const profile = mkdtempSync(join(tmpdir(),'source-browser-'));
  try {

@@ -11,11 +11,14 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/stevelittlefish/the-source/internal/catalog"
 )
 
 type Server struct {
+	yearMu  sync.Mutex
+	years   map[int]int
 	catalog *catalog.Catalog
 	root    *os.Root
 	mux     *http.ServeMux
@@ -132,7 +135,7 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(parts) == 2 {
-		respond(w, 200, bookResponse{b, s.texts[id] != ""})
+		respond(w, 200, bookResponse{s.publicationBook(b), s.texts[id] != ""})
 		return
 	}
 	if s.texts[id] == "" {
@@ -243,8 +246,8 @@ func (s *Server) random(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	q := r.URL.Query()
 	for key := range q {
-		if key != "language" {
-			fail(w, 400, "invalid_query", "Only language is supported for random books.")
+		if key != "language" && key != "year_from" && key != "year_to" {
+			fail(w, 400, "invalid_query", "Use language, year_from and year_to for random books.")
 			return
 		}
 	}
@@ -254,10 +257,18 @@ func (s *Server) random(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var chosen catalog.Book
+	years, err := parseYears(q)
+	if err != nil {
+		fail(w, 400, "invalid_query", err.Error())
+		return
+	}
 	count := 0
 	// Reservoir sampling gives each installed matching work an equal chance.
 	for _, book := range s.catalog.Search(language, "") {
-		if s.texts[book.ID] == "" {
+		if r.Context().Err() != nil {
+			return
+		}
+		if s.texts[book.ID] == "" || !s.matchesYears(book.ID, years) {
 			continue
 		}
 		count++
@@ -266,8 +277,8 @@ func (s *Server) random(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if count == 0 {
-		fail(w, 404, "no_matching_books", "No installed texts match this language.")
+		fail(w, 404, "no_matching_books", "No installed texts match these filters.")
 		return
 	}
-	respond(w, 200, bookResponse{chosen, true})
+	respond(w, 200, bookResponse{s.publicationBook(chosen), true})
 }

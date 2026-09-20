@@ -14,3 +14,9 @@ export function link(text, href) {
  const element = node('a', text); element.href = href; return element;
 }
 export function failure(error) { document.querySelector('#status').textContent = error.message; }
+export function yearFilters(form,params) {
+ for (const key of ['year_from','year_to']) form.elements[key].value = params.get(key) || '';
+ form.addEventListener('formdata',event => {
+  for (const key of ['year_from','year_to']) if (!form.elements[key].value) event.formData.delete(key);
+ });
+}

@@ -6,6 +6,8 @@ It is deliberately not a complete edition. The production corpus lives on The Le
 It is a truth universally acknowledged that a server in possession of a large
 archive must be in want of a sensible API.
 
+Original publication: Fictional fixture publisher, 1927
+
 *** START OF THE PROJECT GUTENBERG EBOOK LOCAL TEST FIXTURE ***
 
 LOCAL TEST FIXTURE

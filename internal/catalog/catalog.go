@@ -15,15 +15,16 @@ import (
 // Book is a Project Gutenberg work. Text is stored elsewhere because 90,000
 // copies of text in memory would be a rather literal interpretation of library.
 type Book struct {
-	ID          int      `json:"id"`
-	Type        string   `json:"type"`
-	Issued      string   `json:"issued"`
-	Title       string   `json:"title"`
-	Languages   []string `json:"languages"`
-	Authors     string   `json:"authors"`
-	Subjects    []string `json:"subjects"`
-	LoCC        []string `json:"locc"`
-	Bookshelves []string `json:"bookshelves"`
+	OriginalPublicationYear int      `json:"original_publication_year,omitempty"`
+	ID                      int      `json:"id"`
+	Type                    string   `json:"type"`
+	Issued                  string   `json:"issued"`
+	Title                   string   `json:"title"`
+	Languages               []string `json:"languages"`
+	Authors                 string   `json:"authors"`
+	Subjects                []string `json:"subjects"`
+	LoCC                    []string `json:"locc"`
+	Bookshelves             []string `json:"bookshelves"`
 }
 
 // Catalog keeps records in predictable title order and makes ID lookup cheap.
