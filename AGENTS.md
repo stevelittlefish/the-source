@@ -15,6 +15,8 @@ religion called Frontend.
    page-specific files. It calls the public API; it does not grow a framework.
 3. **No SPA and no front-end framework.** Every human page has its own URL and
    is server-rendered with `html/template`.
+   The explicitly approved exception is the vendored Swagger UI explorer at
+   `/docs`; it is a standalone tool, not the application framework.
 4. **Plain data and functions beat elaborate object hierarchies.** A book is a
    struct, not a behavioural lifestyle.
 5. **The API is first class.** The web UI must exercise public endpoints rather

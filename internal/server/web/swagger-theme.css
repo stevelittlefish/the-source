@@ -1,0 +1,9 @@
+body { margin:0; background:#101717; color:#ecefe8; font-family:system-ui,sans-serif; }
+header { max-width:1460px; margin:auto; padding:24px 20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:20px; border-bottom:1px solid #374744; }
+header nav { display:flex; gap:24px; flex-wrap:wrap; }
+header a { color:#c6ef87; text-underline-offset:4px; }
+/* Invert the self-contained explorer palette while retaining hue distinctions. */
+#swagger-ui { filter:invert(.88) hue-rotate(180deg); background:#fff; padding:1px 0 30px; }
+.swagger-ui .wrapper { max-width:1460px; }
+.swagger-ui .info { margin:30px 0; }
+noscript { display:block; padding:30px; }

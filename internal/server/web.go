@@ -15,6 +15,12 @@ var web embed.FS
 var page = template.Must(template.ParseFS(web, "web/page.html"))
 
 func (s *Server) routes() {
+	s.mux.HandleFunc("GET /docs", func(w http.ResponseWriter, r *http.Request) {
+		// Swagger creates inline style attributes. Keep this exception scoped
+		// to its page; scripts and API requests still stay on this origin.
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'self'")
+		http.ServeFileFS(w, r, web, "web/swagger.html")
+	})
 	s.mux.HandleFunc("GET /openapi.yaml", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/yaml")
 		http.ServeFileFS(w, r, docs.Files, "openapi.yaml")

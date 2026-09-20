@@ -10,6 +10,7 @@ assert(chrome, 'Install Chromium or Chrome to run this optional smoke test.');
 const base = process.argv[2] || 'http://127.0.0.1:45068';
 for (const [path,expected] of [
  ['/books?available=true', 'Pride and Prejudice'],
+ ['/docs', 'opblock-summary-operation-id'],
  ['/books?q=zzzznosuchtitlezzzz', '0 matching books'],
  ['/books/1342', 'Read this book'],
  ['/read/1342', 'LOCAL DEVELOPMENT FIXTURE'],

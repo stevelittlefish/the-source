@@ -15,7 +15,7 @@ func TestIndexLinks(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("index status: %d", w.Code)
 	}
-	for _, path := range []string{"/books", "/random", "/excerpts", "/openapi.yaml", "/api-guide.md"} {
+	for _, path := range []string{"/books", "/random", "/excerpts", "/docs", "/openapi.yaml", "/api-guide.md"} {
 		if !strings.Contains(w.Body.String(), `href="`+path+`"`) {
 			t.Errorf("missing link: %s", path)
 		}

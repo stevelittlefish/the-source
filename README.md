@@ -40,6 +40,11 @@ The home page at `/` links to the book catalogue, random tools and API docs.
 
 For client authors and coding agents:
 
+- [Interactive API explorer](/docs) — Swagger UI with Try it out, served at
+  `/docs` on the running server. Vendored Swagger UI 5.33.0 is embedded in
+  the binary, with no CDN, remote validator, Node build step or new Go dependency.
+  Upstream licences and upgrade notes live in `internal/server/web/swagger/`.
+
 - [OpenAPI 3.1 specification](docs/openapi.yaml) — the structured API contract,
   also served at `/openapi.yaml`.
 - [Client guide](docs/API.md) — curl examples, defaults, errors, and limitations,
@@ -235,6 +240,8 @@ go vet ./...
 git diff --check
 # With the service running and Chromium installed:
 node scripts/browser-smoke.mjs
+# Exercise Swagger UI's Try it out against the running service:
+node scripts/swagger-smoke.mjs
 ```
 
 See [AGENTS.md](AGENTS.md) for working conventions. Small tested commits go

@@ -1,6 +1,7 @@
 # The Source: client guide
 
 Machine-readable contract: [openapi.yaml](openapi.yaml).
+Interactive documentation with live requests is available at `/docs`.
 The running server serves it at `/openapi.yaml`, and this guide at
 `/api-guide.md`. The spec is OpenAPI 3.1 written in JSON syntax (valid YAML
 1.2), so agents can also parse it with a standard JSON parser.

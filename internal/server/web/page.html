@@ -9,7 +9,7 @@
 </head>
 <body data-id="{{.ID}}">
  <a class="skip" href="#main">Skip to content</a>
- <header><a class="brand" href="/"><b class="mark">S<span>_</span></b> The Source</a><nav aria-label="Main"><a href="/books">Catalogue</a><a href="/books?available=true">Installed texts</a><a href="/random">Random book</a><a href="/api-guide.md">API docs ↗</a></nav></header>
+ <header><a class="brand" href="/"><b class="mark">S<span>_</span></b> The Source</a><nav aria-label="Main"><a href="/books">Catalogue</a><a href="/books?available=true">Installed texts</a><a href="/random">Random book</a><a href="/docs">API docs ↗</a></nav></header>
  <main id="main">
  {{if eq .Kind "index"}}
  <p class="eyebrow">THE SOURCE · PROJECT GUTENBERG</p>
@@ -19,7 +19,7 @@
  <article><p class="eyebrow">THE LIBRARY</p><h2><a href="/books">Browse books →</a></h2><p>Search titles, authors and subjects. Read or download installed texts.</p><p class="muted">English by default. Curiosity encouraged.</p></article>
  <article><p class="eyebrow">SERENDIPITY</p><h2><a href="/random">Random book →</a></h2><p>Let the library choose. Filter by language and original publication year.</p></article>
  <article><p class="eyebrow">A LITTLE PROSE</p><h2><a href="/excerpts">Random excerpt →</a></h2><p>Complete paragraphs, with source metadata. Less paperwork, more story.</p></article>
- <article><p class="eyebrow">FOR BUILDERS</p><h2><a href="/api-guide.md">API guide →</a></h2><p>Requests, defaults, examples and errors. A short manual for humans and coding agents.</p></article>
+ <article><p class="eyebrow">FOR BUILDERS</p><h2><a href="/docs">Interactive API docs →</a></h2><p>Explore endpoints and try live requests. Batteries included, dependency justified.</p><a href="/api-guide.md">Plain-text client guide</a></article>
  <article><p class="eyebrow">THE CONTRACT</p><h2><a href="/openapi.yaml">OpenAPI specification →</a></h2><p>The structured API reference, ready for your tools to ingest.</p></article>
  </section>
  {{else}}
