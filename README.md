@@ -36,6 +36,13 @@ to find them. These are plumbing tests, not suspiciously short editions.
 
 ## API
 
+For client authors and coding agents:
+
+- [OpenAPI 3.1 specification](docs/openapi.yaml) — the structured API contract,
+  also served at `/openapi.yaml`.
+- [Client guide](docs/API.md) — curl examples, defaults, errors, and limitations,
+  also served at `/api-guide.md`.
+
 ```text
 GET /health
 GET /api/v1/books?language=en&q=frankenstein&limit=25&cursor=...

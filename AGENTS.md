@@ -33,6 +33,11 @@ religion called Frontend.
 
 ## Engineering habits
 
+Read [docs/openapi.yaml](docs/openapi.yaml) for the API contract and
+[docs/API.md](docs/API.md) for client examples and operational semantics.
+Update both alongside endpoint changes and their tests. The server embeds
+these exact files at `/openapi.yaml` and `/api-guide.md`; do not maintain copies.
+
 1. Work directly on `main`; make small, coherent commits and push them once
    tested. There are no branches to admire from a safe distance.
 2. Run `go test ./...`, `go vet ./...`, and `git diff --check` before commits

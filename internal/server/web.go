@@ -2,6 +2,7 @@ package server
 
 import (
 	"embed"
+	"github.com/stevelittlefish/the-source/docs"
 	"html/template"
 	"io/fs"
 	"log"
@@ -14,6 +15,14 @@ var web embed.FS
 var page = template.Must(template.ParseFS(web, "web/page.html"))
 
 func (s *Server) routes() {
+	s.mux.HandleFunc("GET /openapi.yaml", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/yaml")
+		http.ServeFileFS(w, r, docs.Files, "openapi.yaml")
+	})
+	s.mux.HandleFunc("GET /api-guide.md", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+		http.ServeFileFS(w, r, docs.Files, "API.md")
+	})
 	s.mux.HandleFunc("GET /excerpts", func(w http.ResponseWriter, r *http.Request) { s.page(w, "excerpts", "Random excerpt", 0) })
 	s.mux.HandleFunc("GET /random", func(w http.ResponseWriter, r *http.Request) { s.page(w, "random", "Random book", 0) })
 	assets, _ := fs.Sub(web, "web")
