@@ -1,3 +1,3 @@
-catalog_path = "/data/pg_catalog.csv"
-books_dir = "/books"
+catalog_path = "/data/gutenberg/pg_catalog.csv"
+books_dir = "/data/gutenberg/cache/epub"
 server_addr = ":45068"

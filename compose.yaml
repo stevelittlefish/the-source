@@ -4,16 +4,10 @@ services:
     ports:
       - "45068:45068"
     volumes:
-      # Change the host path to The Lemon's actual cache/epub directory.
+      # The Lemon's library: metadata and extracted books, under one roof.
       - type: bind
-        source: ./testdata/books
-        target: /books
-        read_only: true
-        bind:
-          create_host_path: false
-      - type: bind
-        source: ./pg_catalog.csv
-        target: /data/pg_catalog.csv
+        source: /mnt/data/gutenberg
+        target: /data/gutenberg
         read_only: true
         bind:
           create_host_path: false

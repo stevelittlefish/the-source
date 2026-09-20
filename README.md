@@ -122,11 +122,31 @@ docker compose up --build -d
 # Open http://localhost:45068/books
 ```
 
-Compose defaults to the tiny local fixtures. On The Lemon, change the first
-bind mount's `source` in `compose.yaml` to the absolute path of
-`cache/epub`. Its container target stays `/books`. The metadata CSV is mounted
-separately at `/data/pg_catalog.csv`. Both mounts are read-only, and neither
-books nor metadata are baked into the image.
+The committed Compose file works on The Lemon without edits. It mounts
+`/mnt/data/gutenberg` read-only at `/data/gutenberg` inside the container:
+
+```text
+/data/gutenberg/
+├── pg_catalog.csv
+└── cache/epub/<id>/pg<id>.txt
+```
+
+One mount supplies both metadata and books. The adjacent `txt-files.tar.zip`
+is ignored; the service reads the extracted files. Neither books nor metadata
+are baked into the image.
+
+For development, explicitly enable the fixture override:
+
+```sh
+docker compose -f compose.yaml -f compose.dev.yaml up --build -d
+```
+
+This replaces the host library mount with two read-only fixture mounts: the
+catalogue and the tiny book directory, at the same paths used in production.
+It requires Docker Compose 2.24.4+ for the `!override` merge tag. The container
+uses exactly the same configuration as production; no symlinks are required.
+The override is named `compose.dev.yaml` so it cannot accidentally activate
+on The Lemon.
 
 The container runs as UID/GID 65532:65532; the mounted files must be readable
 and their directories traversable by that user. The supplied container config

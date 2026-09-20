@@ -1,0 +1,17 @@
+# Explicit opt-in: the committed default belongs to The Lemon.
+services:
+  source:
+    # Replace the production mount entirely (Compose 2.24.4+).
+    volumes: !override
+      - type: bind
+        source: ./pg_catalog.csv
+        target: /data/gutenberg/pg_catalog.csv
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./testdata/books
+        target: /data/gutenberg/cache/epub
+        read_only: true
+        bind:
+          create_host_path: false
