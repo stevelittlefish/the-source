@@ -1,4 +1,5 @@
 # A very small local library. The Lemon gets the enormous one; lucky Lemon.
 catalog_path = "pg_catalog.csv"
 books_dir = "testdata/books"
-server_addr = ":8080"
+# 0xB00C: a book, as spelled by a hexadecimal enthusiast.
+server_addr = "127.0.0.1:45068"

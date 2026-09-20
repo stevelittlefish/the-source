@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1">
+ <title>{{.Title}} · The Source</title>
+ <link rel="stylesheet" href="/static/style.css">
+ <script src="/static/{{.Kind}}.js" type="module"></script>
+</head>
+<body data-id="{{.ID}}">
+ <header><a class="brand" href="/books">The Source<span>A small door into a very large library.</span></a><a href="/api/v1/books">API ↗</a></header>
+ <main>
+ {{if eq .Kind "browse"}}
+ <p class="eyebrow">PROJECT GUTENBERG · THE CATALOGUE</p>
+ <h1>Something worth<br>getting lost in.</h1>
+ <p>Find a book by title, author or subject. Curiosity is the only prerequisite.</p>
+ <form action="/books" method="get">
+  <label class="search">Search the library<input type="search" name="q" placeholder="A title, an author, an unreasonable obsession…" maxlength="256"></label>
+  <label>Language<select name="language"><option value="en">English</option><option value="all">All languages</option></select></label>
+  <label class="check"><input type="checkbox" name="available" value="true"> Text installed</label>
+  <button>Find books</button>
+ </form>
+ <p id="status" role="status">Opening the catalogue…</p>
+ <section id="results" aria-label="Books"></section>
+ <nav id="pagination" aria-label="Results pages"></nav>
+ {{else}}
+ <a href="/books">← Browse the library</a>
+ <p class="eyebrow">PROJECT GUTENBERG · BOOK {{.ID}}</p>
+ <h1 id="title">Opening book…</h1>
+ <p id="author"></p>
+ <p id="status" role="status"></p>
+ {{if eq .Kind "book"}}<dl id="metadata"></dl><p id="actions"></p>{{else}}
+ <p><a href="/books/{{.ID}}">Book details</a> · <a href="/api/v1/books/{{.ID}}/text">Plain text</a></p>
+ <iframe title="Book text" src="/api/v1/books/{{.ID}}/text"></iframe>
+ {{end}}
+ {{end}}
+ <noscript>This interface needs JavaScript to load the API. You can also <a href="/api/v1/books">browse the JSON API directly</a>.</noscript>
+ </main>
+ <footer>The Source · Books on tap. No subscription to your own curiosity.</footer>
+</body>
+</html>

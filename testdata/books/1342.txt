@@ -1,0 +1,7 @@
+LOCAL DEVELOPMENT FIXTURE — Gutenberg ID 1342
+
+This is synthetic test content standing in for Pride and Prejudice.
+It is deliberately not a complete edition. The production corpus lives on The Lemon.
+
+It is a truth universally acknowledged that a server in possession of a large
+archive must be in want of a sensible API.

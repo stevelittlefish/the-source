@@ -38,3 +38,18 @@ func TestLoadRejectsUnexpectedHeader(t *testing.T) {
 		t.Fatal("Load accepted an unexpected header")
 	}
 }
+
+func TestFullCatalog(t *testing.T) {
+	c, err := LoadFile("../../pg_catalog.csv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	english := len(c.Search("en", ""))
+	t.Logf("catalog: %d records; %d English text records", len(c.books), english)
+	if english == 0 {
+		t.Fatal("no English books found")
+	}
+	if b, ok := c.Get(1342); !ok || b.Title != "Pride and Prejudice" {
+		t.Fatalf("unexpected Austen: %+v", b)
+	}
+}

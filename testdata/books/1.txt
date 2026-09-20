@@ -1,0 +1,6 @@
+LOCAL DEVELOPMENT FIXTURE — Gutenberg ID 1
+
+This is synthetic test content standing in for The Declaration of Independence.
+It is deliberately not a complete edition. The production corpus lives on The Lemon.
+
+We hold these tests to be self-evident: that all bytes should arrive in order.
