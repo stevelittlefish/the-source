@@ -1,0 +1,4 @@
+# A very small local library. The Lemon gets the enormous one; lucky Lemon.
+catalog_path = "pg_catalog.csv"
+books_dir = "testdata/books"
+server_addr = ":8080"
