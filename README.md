@@ -36,6 +36,8 @@ to find them. These are plumbing tests, not suspiciously short editions.
 
 ## API
 
+The home page at `/` links to the book catalogue, random tools and API docs.
+
 For client authors and coding agents:
 
 - [OpenAPI 3.1 specification](docs/openapi.yaml) — the structured API contract,

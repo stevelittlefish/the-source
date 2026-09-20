@@ -27,7 +27,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /random", func(w http.ResponseWriter, r *http.Request) { s.page(w, "random", "Random book", 0) })
 	assets, _ := fs.Sub(web, "web")
 	s.mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(assets)))
-	s.mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, "/books", http.StatusSeeOther) })
+	s.mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) { s.page(w, "index", "The Source", 0) })
 	s.mux.HandleFunc("GET /books", func(w http.ResponseWriter, r *http.Request) { s.page(w, "browse", "Browse the library", 0) })
 	s.mux.HandleFunc("GET /books/{id}", func(w http.ResponseWriter, r *http.Request) { s.bookPage(w, r, "book") })
 	s.mux.HandleFunc("GET /read/{id}", func(w http.ResponseWriter, r *http.Request) { s.bookPage(w, r, "read") })

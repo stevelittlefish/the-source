@@ -4,8 +4,26 @@ import (
 	"bytes"
 	"github.com/stevelittlefish/the-source/docs"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
+
+func TestIndexLinks(t *testing.T) {
+	s := testServer(t)
+	w := httptest.NewRecorder()
+	s.ServeHTTP(w, httptest.NewRequest("GET", "/", nil))
+	if w.Code != 200 {
+		t.Fatalf("index status: %d", w.Code)
+	}
+	for _, path := range []string{"/books", "/random", "/excerpts", "/openapi.yaml", "/api-guide.md"} {
+		if !strings.Contains(w.Body.String(), `href="`+path+`"`) {
+			t.Errorf("missing link: %s", path)
+		}
+	}
+	if strings.Contains(w.Body.String(), "<script") {
+		t.Error("index should work without JavaScript")
+	}
+}
 
 func TestServedDocsMatchSource(t *testing.T) {
 	s := testServer(t)
