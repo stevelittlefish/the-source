@@ -213,20 +213,6 @@ Prepare the writable index directory on The Lemon once:
 sudo install -d -o 65532 -g 65532 -m 0755 /srv/the-source
 ```
 
-To preserve an index from the previous named-volume setup, stop the service
-before copying it (adjust the volume name if your Compose project differs):
-
-```sh
-docker compose stop source
-docker volume inspect the-source_source-state --format '{{.Mountpoint}}'
-# Use the actual mountpoint printed above:
-sudo cp /var/lib/docker/volumes/the-source_source-state/_data/year-index.json /srv/the-source/year-index.json
-sudo chown 65532:65532 /srv/the-source/year-index.json
-```
-
-Skip the copy if no index exists yet; the service will build one. Leave the old
-volume in place until the new deployment has successfully reused the index.
-
 ```sh
 docker compose up --build -d
 # Open http://localhost:45068/books
