@@ -34,6 +34,10 @@ h2 { font:normal 25px/1.3 Georgia,serif; letter-spacing:-.015em; overflow-wrap:a
 article p { font-size:13px; }
 .author { margin:0 0 12px; color:#c4ccc7; }
 .subjects { font-size:12px; color:var(--muted); margin:0 0 24px; }
+/* Some Gutenberg titles have ambitions of becoming a second volume. */
+article h2,article .author,article .subjects { display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; }
+article h2 { -webkit-line-clamp:3; }
+article .author,article .subjects { -webkit-line-clamp:2; }
 .badge { align-self:start; margin-top:auto; font-size:10px; letter-spacing:.04em; border:1px solid #3d4b47; padding:4px 9px; border-radius:5px; color:var(--muted); }
 .installed { color:var(--accent); background:#243123; border-color:#42573a; }
 #pagination { display:flex; justify-content:space-between; gap:30px; padding:32px 0; }

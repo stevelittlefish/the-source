@@ -25,7 +25,7 @@ try {
  const results = document.querySelector('#results');
  for (const book of data.books) {
   const card = node('article');
-  const title = node('h2'); title.append(link(book.title, '/books/' + book.id));
+  const title = node('h2'); title.title = book.title; title.append(link(book.title, '/books/' + book.id));
   card.append(node('p', '#' + book.id + ' · ' + book.languages.join(', '), 'eyebrow'), title,
    node('p', book.authors || 'Author unrecorded', 'author'),
    node('p', book.subjects.slice(0,2).join(' · ') || 'No subjects recorded', 'subjects'),
