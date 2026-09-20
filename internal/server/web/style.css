@@ -22,6 +22,7 @@ input,select,button,.button { font:inherit; padding:12px 16px; border:1px solid 
 input { width:100%; }
 button,.button { background:var(--accent); color:#172410; border-color:var(--accent); cursor:pointer; font-weight:650; text-decoration:none; }
 button:hover,.button:hover { background:#d7ffa4; color:#172410; }
+.button-secondary { background:transparent; color:var(--accent); border-color:#647b57; }
 button:disabled { opacity:.6; cursor:wait; }
 :focus-visible { outline:3px solid var(--accent); outline-offset:4px; }
 .result-bar { display:flex; justify-content:space-between; align-items:center; gap:16px; font-size:12px; color:var(--muted); margin:16px 0; }
