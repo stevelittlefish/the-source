@@ -2,7 +2,11 @@ import {getJSON,node,link,failure} from './common.js';
 const params = new URLSearchParams(location.search);
 const form = document.querySelector('form');
 form.elements.q.value = params.get('q') || '';
-form.elements.available.checked = params.get('available') === 'true';
+form.elements.available.value = params.get('available') || '';
+form.addEventListener('formdata', event => {
+ if (!form.elements.available.value) event.formData.delete('available');
+});
+document.querySelector('#api-link').href = '/api/v1/books?' + params;
 const language = params.get('language') || 'en';
 if (![...form.elements.language.options].some(option => option.value === language)) {
  form.elements.language.add(new Option(language,language));
@@ -23,12 +27,15 @@ try {
   const card = node('article');
   const title = node('h2'); title.append(link(book.title, '/books/' + book.id));
   card.append(node('p', '#' + book.id + ' · ' + book.languages.join(', '), 'eyebrow'), title,
-   node('p', book.authors || 'Author unrecorded'), node('span', book.available ? 'Text installed' : 'Catalogue only', 'badge'));
+   node('p', book.authors || 'Author unrecorded', 'author'),
+   node('p', book.subjects.slice(0,2).join(' · ') || 'No subjects recorded', 'subjects'),
+   node('span', book.available ? '● Text installed' : '○ Catalogue only', 'badge' + (book.available ? ' installed' : '')));
   results.append(card);
  }
  const pagination = document.querySelector('#pagination');
  const offset = Number(params.get('cursor') || 0);
  const limit = Number(params.get('limit') || 25);
+ if (data.books.length) document.querySelector('#status').append(document.createTextNode(' · Showing ' + (offset + 1) + '–' + (offset + data.books.length)));
  function pageLink(text,cursor) {
   const next = new URLSearchParams(params); next.set('cursor',String(cursor));
   return link(text,'/books?' + next);

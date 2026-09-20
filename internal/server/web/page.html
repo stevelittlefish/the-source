@@ -8,19 +8,20 @@
  <script src="/static/{{.Kind}}.js" type="module"></script>
 </head>
 <body data-id="{{.ID}}">
- <header><a class="brand" href="/books">The Source<span>A small door into a very large library.</span></a><a href="/api/v1/books">API ↗</a></header>
- <main>
+ <a class="skip" href="#main">Skip to content</a>
+ <header><a class="brand" href="/books"><b class="mark">S<span>_</span></b> The Source</a><nav aria-label="Main"><a href="/books">Catalogue</a><a href="/books?available=true">Installed texts</a><a href="/api/v1/books">API ↗</a></nav></header>
+ <main id="main">
  {{if eq .Kind "browse"}}
  <p class="eyebrow">PROJECT GUTENBERG · THE CATALOGUE</p>
- <h1>Something worth<br>getting lost in.</h1>
- <p>Find a book by title, author or subject. Curiosity is the only prerequisite.</p>
+ <h1>A world of words.<br><em>At your fingertips.</em></h1>
+ <p class="intro">Explore the library. Inspect the data. Find your next rabbit hole.</p>
  <form action="/books" method="get">
   <label class="search">Search the library<input type="search" name="q" placeholder="A title, an author, an unreasonable obsession…" maxlength="256"></label>
   <label>Language<select name="language"><option value="en">English</option><option value="all">All languages</option></select></label>
-  <label class="check"><input type="checkbox" name="available" value="true"> Text installed</label>
+  <label>Text availability<select name="available"><option value="">All records</option><option value="true">Text installed</option><option value="false">Catalogue only</option></select></label>
   <button>Find books</button>
  </form>
- <p id="status" role="status">Opening the catalogue…</p>
+ <div class="result-bar"><p id="status" role="status">Opening the catalogue…</p><a id="api-link" href="/api/v1/books">Inspect this query ↗</a></div>
  <section id="results" aria-label="Books"></section>
  <nav id="pagination" aria-label="Results pages"></nav>
  {{else}}
@@ -29,9 +30,10 @@
  <h1 id="title">Opening book…</h1>
  <p id="author"></p>
  <p id="status" role="status"></p>
- {{if eq .Kind "book"}}<dl id="metadata"></dl><p id="actions"></p>{{else}}
+ {{if eq .Kind "book"}}<p id="actions" class="actions"></p><div class="detail-grid"><section class="panel"><h2>Inside the record</h2><dl id="metadata"></dl></section><section class="panel"><p class="eyebrow">UNDER THE HOOD</p><h2>The actual data.</h2><p class="muted">Straight from the API. No literary embellishment.</p><pre id="json" tabindex="0" aria-label="Book API JSON">Loading record…</pre></section></div>{{else}}
  <p><a href="/books/{{.ID}}">Book details</a> · <a href="/api/v1/books/{{.ID}}/text">Plain text</a></p>
- <iframe title="Book text" src="/api/v1/books/{{.ID}}/text"></iframe>
+ <pre id="text" class="reader" aria-label="Book text"></pre>
+ <button id="load-more" hidden>Load more text</button>
  {{end}}
  {{end}}
  <noscript>This interface needs JavaScript to load the API. You can also <a href="/api/v1/books">browse the JSON API directly</a>.</noscript>

@@ -75,7 +75,9 @@ curl http://127.0.0.1:45068/api/v1/books/1342/text
 
 Normal browser pages live at `/books`, `/books/{id}` and `/read/{id}`.
 Search forms and pagination navigate between URLs, so bookmarks and the back
-button work normally. The reader embeds the streaming text endpoint.
+button work normally. The dark interface shows subjects and text availability,
+and book details include the full API JSON. The reader fetches text in 64 KB
+chunks, with a Load more button for longer works.
 
 ## Configuration and deployment
 

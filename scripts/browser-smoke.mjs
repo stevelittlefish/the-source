@@ -12,7 +12,8 @@ for (const [path,expected] of [
  ['/books?available=true', 'Pride and Prejudice'],
  ['/books?q=zzzznosuchtitlezzzz', '0 matching books'],
  ['/books/1342', 'Read this book'],
- ['/read/1342', 'Pride and Prejudice'],
+ ['/read/1342', 'LOCAL DEVELOPMENT FIXTURE'],
+ ['/books/1342', '"locc":'],
 ]) {
  const profile = mkdtempSync(join(tmpdir(),'source-browser-'));
  try {
