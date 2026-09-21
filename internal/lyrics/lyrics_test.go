@@ -89,15 +89,25 @@ func TestSearch(t *testing.T) {
 
 func TestRandomAndTags(t *testing.T) {
 	s := fixture(t)
-	if _, ok, err := s.Random("fr", ""); err != nil || !ok {
+	if _, ok, err := s.Random(RandomFilter{Language: "fr"}); err != nil || !ok {
 		t.Fatalf("random fr: %v %v", ok, err)
 	}
-	song, ok, err := s.Random("", "rap")
+	song, ok, err := s.Random(RandomFilter{Tag: "rap"})
 	if err != nil || !ok || song.ID != 2 {
 		t.Fatalf("random rap = %+v %v %v", song, ok, err)
 	}
-	if _, ok, _ := s.Random("de", ""); ok {
+	if _, ok, _ := s.Random(RandomFilter{Language: "de"}); ok {
 		t.Fatal("random matched an absent language")
+	}
+	// Views bounds: only the rap song (5000 views) clears a 1000 floor.
+	if song, ok, err := s.Random(RandomFilter{ViewsFrom: 1000}); err != nil || !ok || song.ID != 2 {
+		t.Fatalf("random views>=1000 = %+v %v %v", song, ok, err)
+	}
+	if _, ok, _ := s.Random(RandomFilter{ViewsFrom: 10000000}); ok {
+		t.Fatal("random matched an impossible views floor")
+	}
+	if song, ok, err := s.Random(RandomFilter{ViewsTo: 50}); err != nil || !ok || song.Views > 50 {
+		t.Fatalf("random views<=50 = %+v %v %v", song, ok, err)
 	}
 	tags, err := s.Tags()
 	if err != nil || !reflect.DeepEqual(tags, []string{"pop", "rap"}) {

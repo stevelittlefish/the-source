@@ -42,6 +42,23 @@ func TestBooksLandingLinks(t *testing.T) {
 	}
 }
 
+func TestLyricsLandingLinks(t *testing.T) {
+	s := testServer(t)
+	w := httptest.NewRecorder()
+	s.ServeHTTP(w, httptest.NewRequest("GET", "/lyrics", nil))
+	if w.Code != 200 {
+		t.Fatalf("lyrics landing status: %d", w.Code)
+	}
+	for _, path := range []string{"/lyrics/browse", "/lyrics/random", "/lyrics/excerpts"} {
+		if !strings.Contains(w.Body.String(), `href="`+path+`"`) {
+			t.Errorf("missing link: %s", path)
+		}
+	}
+	if strings.Contains(w.Body.String(), "<script") {
+		t.Error("lyrics landing should work without JavaScript")
+	}
+}
+
 func TestServedDocsMatchSource(t *testing.T) {
 	s := testServer(t)
 	for _, tc := range []struct{ path, file, contentType string }{

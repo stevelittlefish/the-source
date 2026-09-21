@@ -144,15 +144,22 @@ Differences from books worth noting:
 - **No English default.** `language` and `tag` are optional filters; omitting
   them (or `language=all`) searches everything. Both are case-insensitive.
 - **Full-text search.** `q` runs SQLite FTS5 over title, artist and the lyrics
-  body — so you can search by a line as well as by name. Every whitespace-
-  separated word is required; maximum 256 UTF-8 bytes. Empty `q` is plain
-  browsing. Results sort by ascending `id`; page with `next_cursor` as `cursor`.
+  body — so you can search by a line as well as by name (title OR artist OR
+  text, in one box). Every whitespace-separated word is required; maximum 256
+  UTF-8 bytes. Results are ranked by relevance — a title match outweighs an
+  artist match, which outweighs a body match, and the more-viewed song wins
+  ties — so the obvious hit surfaces first. Empty `q` falls back to plain
+  browsing in `id` order. Page with `next_cursor` as `cursor`.
 - **Lyrics bodies are omitted** from listings, item metadata, random and excerpt
   responses to keep them light. Fetch the body from `/lyrics/{id}/text`, which
   returns plain text (including `[Chorus]`-style markers) with no byte-range or
   conditional-request support.
-- **Random is uniform over the whole table**, independent of storage order;
-  responses carry `Cache-Control: no-store`.
+- **Random** ranges over the whole table independent of storage order (a
+  precomputed indexed bucket, not a full scan); responses carry
+  `Cache-Control: no-store`. Both `/lyrics/random` and `/lyrics/excerpts/random`
+  accept `views_from` and `views_to` to bound popularity (each a non-negative
+  integer, `views_from ≤ views_to`; omit either side for open-ended), alongside
+  `language` and `tag`.
 - **Excerpts return a stanza:** `{"song":{...},"lines":[...]}`. A stanza is a
   run of consecutive non-blank lines between blank lines; bracketed section
   markers are dropped and a stanza has at least two lines. On 422

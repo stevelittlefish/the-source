@@ -37,6 +37,8 @@ religion called Frontend.
    lyrics corpus is a read-only SQLite file (`modernc.org/sqlite`, pure Go)
    built offline by `cmd/lyricsprep` and queried with FTS5. Run it where the
    data lives: `go run ./cmd/lyricsprep -in song_lyrics_en.csv -out lyrics.db`.
+   It drops Genius's `misc` tag by default (poems, scripts, essays, book
+   chapters — not songs); pass `-include-misc` to keep them.
    The full CSV and built database stay on The Lemon; only the small sampled
    `testdata/lyrics_sample.csv` and its `testdata/lyrics.db` are checked in.
    Lyrics are optional — an empty `lyrics_db_path` runs a books-only server.

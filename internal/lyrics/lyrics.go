@@ -11,6 +11,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math/rand/v2"
 	"strings"
 
 	_ "modernc.org/sqlite"
@@ -40,6 +41,16 @@ type Filter struct {
 	Query    string
 	Limit    int
 	Offset   int
+}
+
+// RandomFilter narrows random selection. Empty strings and zero bounds mean
+// "no filter"; because views are never negative, a zero ViewsFrom is simply no
+// lower bound and a zero ViewsTo is no upper bound.
+type RandomFilter struct {
+	Language  string
+	Tag       string
+	ViewsFrom int
+	ViewsTo   int
 }
 
 // Open opens the prepared database read-only. immutable promises SQLite the
@@ -131,7 +142,14 @@ func (s *Store) Search(f Filter) ([]Song, int, error) {
 	if err := s.db.QueryRow("SELECT COUNT(*) FROM "+from+clause, args...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
-	rows, err := s.db.Query("SELECT "+prefixed(columns)+" FROM "+from+clause+" ORDER BY s.id LIMIT ? OFFSET ?",
+	// With a query, rank by relevance and surface the obvious hits: a title
+	// match outweighs an artist match, which outweighs a body match, with the
+	// more-read song breaking ties. Plain browsing stays in id order.
+	order := " ORDER BY s.id"
+	if match != "" {
+		order = " ORDER BY bm25(songs_fts, 10.0, 8.0, 1.0), s.views DESC, s.id"
+	}
+	rows, err := s.db.Query("SELECT "+prefixed(columns)+" FROM "+from+clause+order+" LIMIT ? OFFSET ?",
 		append(args, f.Limit, f.Offset)...)
 	if err != nil {
 		return nil, 0, err
@@ -148,27 +166,50 @@ func (s *Store) Search(f Filter) ([]Song, int, error) {
 	return songs, total, rows.Err()
 }
 
-// Random returns a uniformly random song matching the language and tag
-// filters, ignoring row order. This matters: the corpus is stored roughly in
-// id order and genre correlates with id, so anything leaning on ordering would
-// skew heavily toward the rap-heavy front of the file.
-func (s *Store) Random(language, tag string) (Song, bool, error) {
+// Random returns a random song matching the language and tag filters. It picks
+// the first row whose precomputed random bucket is at or above a random cursor,
+// wrapping to the smallest bucket when the cursor lands past the end. Backed by
+// the bucket indexes this is O(log n) — a full ORDER BY RANDOM() scan over
+// millions of rows was seconds per request. Selection ignores storage order,
+// which matters: the corpus sits roughly in id order and genre correlates with
+// id, so anything leaning on ordering would skew toward the rap-heavy front.
+func (s *Store) Random(f RandomFilter) (Song, bool, error) {
 	var where []string
 	var args []any
-	if language != "" {
+	if f.Language != "" {
 		where = append(where, "language = ?")
-		args = append(args, language)
+		args = append(args, f.Language)
 	}
-	if tag != "" {
+	if f.Tag != "" {
 		where = append(where, "tag = ?")
-		args = append(args, tag)
+		args = append(args, f.Tag)
 	}
-	clause := ""
-	if len(where) > 0 {
-		clause = " WHERE " + strings.Join(where, " AND ")
+	if f.ViewsFrom > 0 {
+		where = append(where, "views >= ?")
+		args = append(args, f.ViewsFrom)
 	}
-	row := s.db.QueryRow("SELECT "+columns+" FROM songs"+clause+" ORDER BY RANDOM() LIMIT 1", args...)
+	if f.ViewsTo > 0 {
+		where = append(where, "views <= ?")
+		args = append(args, f.ViewsTo)
+	}
+	clause := func(extra string) string {
+		parts := where
+		if extra != "" {
+			parts = append(append([]string{}, where...), extra)
+		}
+		if len(parts) == 0 {
+			return ""
+		}
+		return " WHERE " + strings.Join(parts, " AND ")
+	}
+	r := rand.Float64()
+	row := s.db.QueryRow("SELECT "+columns+" FROM songs"+clause("bucket >= ?")+" ORDER BY bucket LIMIT 1",
+		append(append([]any{}, args...), r)...)
 	song, err := scanSong(row)
+	if errors.Is(err, sql.ErrNoRows) {
+		row = s.db.QueryRow("SELECT "+columns+" FROM songs"+clause("")+" ORDER BY bucket LIMIT 1", args...)
+		song, err = scanSong(row)
+	}
 	if errors.Is(err, sql.ErrNoRows) {
 		return Song{}, false, nil
 	}

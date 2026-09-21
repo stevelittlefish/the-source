@@ -26,6 +26,7 @@ var expected = []string{"title", "tag", "artist", "year", "views", "features", "
 func main() {
 	in := flag.String("in", "", "source lyrics CSV")
 	out := flag.String("out", "", "destination SQLite database (must not exist)")
+	includeMisc := flag.Bool("include-misc", false, "keep tag=misc rows (poems, scripts, essays, book chapters); excluded by default as non-songs")
 	flag.Parse()
 	if *in == "" || *out == "" {
 		log.Fatal("usage: lyricsprep -in song_lyrics_en.csv -out lyrics.db")
@@ -33,13 +34,13 @@ func main() {
 	if _, err := os.Stat(*out); err == nil {
 		log.Fatalf("%s already exists; remove it to rebuild", *out)
 	}
-	if err := run(*in, *out); err != nil {
+	if err := run(*in, *out, *includeMisc); err != nil {
 		os.Remove(*out)
 		log.Fatal(err)
 	}
 }
 
-func run(in, out string) error {
+func run(in, out string, includeMisc bool) error {
 	f, err := os.Open(in)
 	if err != nil {
 		return err
@@ -64,7 +65,7 @@ func run(in, out string) error {
 	}
 
 	start := time.Now()
-	row, kept, skipped, dupes := 1, 0, 0, 0
+	row, kept, skipped, dupes, misc := 1, 0, 0, 0, 0
 	seen := make(map[int]struct{})
 	for {
 		row++
@@ -95,13 +96,21 @@ func run(in, out string) error {
 			skipped++
 			continue
 		}
+		// Genius files everything non-musical under "misc": poems, scripts,
+		// essays, book chapters, open letters. This is a song server, so drop
+		// them by default (mirrors the book catalogue keeping only Type=Text).
+		tag := strings.ToLower(strings.TrimSpace(record[index["tag"]]))
+		if !includeMisc && tag == "misc" {
+			misc++
+			continue
+		}
 		year, _ := strconv.Atoi(strings.TrimSpace(record[index["year"]]))
 		views, _ := strconv.Atoi(strings.TrimSpace(record[index["views"]]))
 		song := lyrics.Song{
 			ID:       id,
 			Title:    title,
 			Artist:   strings.TrimSpace(record[index["artist"]]),
-			Tag:      strings.TrimSpace(record[index["tag"]]),
+			Tag:      tag,
 			Language: strings.ToLower(strings.TrimSpace(record[index["language"]])),
 			Year:     lyrics.CleanYear(year),
 			Views:    views,
@@ -121,8 +130,8 @@ func run(in, out string) error {
 	if err := writer.Finish(); err != nil {
 		return err
 	}
-	log.Printf("done: %d songs imported, %d skipped, %d duplicate ids; %s total",
-		kept, skipped, dupes, time.Since(start).Round(time.Second))
+	log.Printf("done: %d songs imported, %d skipped, %d duplicate ids, %d misc dropped; %s total",
+		kept, skipped, dupes, misc, time.Since(start).Round(time.Second))
 	return nil
 }
 

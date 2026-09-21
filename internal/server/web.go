@@ -40,8 +40,31 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /books/excerpts", func(w http.ResponseWriter, r *http.Request) { s.page(w, "excerpts", "Random excerpt", 0) })
 	s.mux.HandleFunc("GET /books/{id}", func(w http.ResponseWriter, r *http.Request) { s.bookPage(w, r, "book") })
 	s.mux.HandleFunc("GET /read/{id}", func(w http.ResponseWriter, r *http.Request) { s.bookPage(w, r, "read") })
-	// Lyrics section: placeholder for now.
+	// Lyrics section: a landing hub and its pages, all under /lyrics.
 	s.mux.HandleFunc("GET /lyrics", func(w http.ResponseWriter, r *http.Request) { s.page(w, "lyrics", "Lyrics", 0) })
+	s.mux.HandleFunc("GET /lyrics/{$}", func(w http.ResponseWriter, r *http.Request) { s.page(w, "lyrics", "Lyrics", 0) })
+	s.mux.HandleFunc("GET /lyrics/browse", func(w http.ResponseWriter, r *http.Request) { s.page(w, "songs", "Browse lyrics", 0) })
+	s.mux.HandleFunc("GET /lyrics/random", func(w http.ResponseWriter, r *http.Request) { s.page(w, "songrandom", "Random song", 0) })
+	s.mux.HandleFunc("GET /lyrics/excerpts", func(w http.ResponseWriter, r *http.Request) { s.page(w, "stanza", "Random stanza", 0) })
+	s.mux.HandleFunc("GET /lyrics/{id}", func(w http.ResponseWriter, r *http.Request) { s.songPage(w, r) })
+}
+func (s *Server) songPage(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil || id < 1 || s.songs == nil {
+		http.NotFound(w, r)
+		return
+	}
+	_, ok, err := s.songs.Get(id)
+	if err != nil {
+		log.Printf("song page %d: %v", id, err)
+		http.Error(w, "Cannot load song.", 500)
+		return
+	}
+	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+	s.page(w, "song", "Song "+strconv.Itoa(id), id)
 }
 func (s *Server) bookPage(w http.ResponseWriter, r *http.Request, kind string) {
 	id, err := strconv.Atoi(r.PathValue("id"))

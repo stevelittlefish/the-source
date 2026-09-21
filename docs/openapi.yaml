@@ -653,7 +653,7 @@
       "get": {
         "operationId": "listLyrics",
         "summary": "Browse and search songs",
-        "description": "Ascending id order. With q, runs SQLite FTS5 full-text search over title, artist and lyrics body (each whitespace-separated word required, as a quoted term); without q, plain browsing. Optional language and tag filters. Song lyrics bodies are omitted from listings. Empty results return 200. Numeric offset cursors are not snapshots.",
+        "description": "Without q, ascending id order. With q, runs SQLite FTS5 full-text search over title, artist and lyrics body (each whitespace-separated word required, as a quoted term) and orders by relevance: title matches outweigh artist matches, which outweigh body matches, with view count breaking ties. Optional language and tag filters. Song lyrics bodies are omitted from listings. Empty results return 200. Numeric offset cursors are not snapshots.",
         "parameters": [
           {"$ref": "#/components/parameters/songLanguage"},
           {"$ref": "#/components/parameters/tag"},
@@ -745,10 +745,12 @@
       "get": {
         "operationId": "randomSong",
         "summary": "Pick a random song",
-        "description": "Uniformly random over all songs matching the optional language and tag filters, independent of storage order. Returns metadata without the lyrics body. Repeats are allowed.",
+        "description": "Random over songs matching the optional language, tag and view-count filters, independent of storage order (indexed random bucket, not a full scan). Returns metadata without the lyrics body. Repeats are allowed.",
         "parameters": [
           {"$ref": "#/components/parameters/songLanguage"},
-          {"$ref": "#/components/parameters/tag"}
+          {"$ref": "#/components/parameters/tag"},
+          {"$ref": "#/components/parameters/views_from"},
+          {"$ref": "#/components/parameters/views_to"}
         ],
         "responses": {
           "200": {"description": "Chosen song without lyrics body.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Song"}}}, "headers": {"Cache-Control": {"schema": {"type": "string", "const": "no-store"}}}},
@@ -764,7 +766,9 @@
         "description": "Same selection/validation as GET; no response body.",
         "parameters": [
           {"$ref": "#/components/parameters/songLanguage"},
-          {"$ref": "#/components/parameters/tag"}
+          {"$ref": "#/components/parameters/tag"},
+          {"$ref": "#/components/parameters/views_from"},
+          {"$ref": "#/components/parameters/views_to"}
         ],
         "responses": {
           "200": {"description": "Chosen song without lyrics body.", "headers": {"Cache-Control": {"schema": {"type": "string", "const": "no-store"}}}},
@@ -779,10 +783,12 @@
       "get": {
         "operationId": "randomStanza",
         "summary": "Get a random stanza from a random song",
-        "description": "Tries up to eight random matching songs. A stanza is a run of consecutive non-blank lines between blank lines; lines that are bracketed section markers such as [Chorus] are dropped, and a stanza must have at least two lines. Chooses uniformly among eligible stanzas within a song. Returns the source song (without its full lyrics body) and the stanza lines.",
+        "description": "Tries up to eight random matching songs (honouring the optional language, tag and view-count filters). A stanza is a run of consecutive non-blank lines between blank lines; lines that are bracketed section markers such as [Chorus] are dropped, and a stanza must have at least two lines. Chooses uniformly among eligible stanzas within a song. Returns the source song (without its full lyrics body) and the stanza lines.",
         "parameters": [
           {"$ref": "#/components/parameters/songLanguage"},
-          {"$ref": "#/components/parameters/tag"}
+          {"$ref": "#/components/parameters/tag"},
+          {"$ref": "#/components/parameters/views_from"},
+          {"$ref": "#/components/parameters/views_to"}
         ],
         "responses": {
           "200": {"description": "Stanza with source song metadata.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LyricsExcerpt"}}}, "headers": {"Cache-Control": {"schema": {"type": "string", "const": "no-store"}}}},
@@ -799,7 +805,9 @@
         "description": "Same selection/validation as GET; no response body.",
         "parameters": [
           {"$ref": "#/components/parameters/songLanguage"},
-          {"$ref": "#/components/parameters/tag"}
+          {"$ref": "#/components/parameters/tag"},
+          {"$ref": "#/components/parameters/views_from"},
+          {"$ref": "#/components/parameters/views_to"}
         ],
         "responses": {
           "200": {"description": "Stanza with source song metadata.", "headers": {"Cache-Control": {"schema": {"type": "string", "const": "no-store"}}}},
@@ -939,6 +947,20 @@
         "required": true,
         "schema": {"type": "integer", "minimum": 1},
         "example": 10
+      },
+      "views_from": {
+        "name": "views_from",
+        "in": "query",
+        "description": "Inclusive lower bound on view count. Omit or 0 for no lower bound. Must not exceed views_to.",
+        "schema": {"type": "integer", "minimum": 0},
+        "example": 1000
+      },
+      "views_to": {
+        "name": "views_to",
+        "in": "query",
+        "description": "Inclusive upper bound on view count. Omit or 0 for no upper bound.",
+        "schema": {"type": "integer", "minimum": 0},
+        "example": 100000
       }
     },
     "schemas": {

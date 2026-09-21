@@ -3,6 +3,7 @@ package lyrics
 import (
 	"database/sql"
 	"fmt"
+	"math/rand/v2"
 )
 
 // schema is the whole shape of the corpus. songs holds the data; songs_fts is
@@ -19,9 +20,15 @@ CREATE TABLE songs (
     year     INTEGER,
     views    INTEGER NOT NULL DEFAULT 0,
     features TEXT,
-    lyrics   TEXT NOT NULL
+    lyrics   TEXT NOT NULL,
+    bucket   REAL NOT NULL          -- random value in [0,1) for O(log n) sampling
 );
 CREATE INDEX songs_language_tag ON songs(language, tag);
+-- (bucket, views) lets a views-range random skip non-matching rows in-index,
+-- so filtering by popularity stays fast instead of degrading to a scan.
+CREATE INDEX songs_bucket_views ON songs(bucket, views);
+CREATE INDEX songs_tag_bucket ON songs(tag, bucket);
+CREATE INDEX songs_lang_bucket ON songs(language, bucket);
 CREATE VIRTUAL TABLE songs_fts USING fts5(
     title, artist, lyrics,
     content='songs', content_rowid='id',
@@ -64,7 +71,7 @@ func (w *Writer) begin() error {
 	if err != nil {
 		return err
 	}
-	stmt, err := tx.Prepare("INSERT INTO songs (id, title, artist, tag, language, year, views, features, lyrics) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+	stmt, err := tx.Prepare("INSERT INTO songs (id, title, artist, tag, language, year, views, features, lyrics, bucket) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -78,7 +85,7 @@ func (w *Writer) begin() error {
 func (w *Writer) Add(s Song) error {
 	_, err := w.stmt.Exec(s.ID, s.Title, s.Artist,
 		nullString(s.Tag), nullString(s.Language), nullInt(s.Year),
-		s.Views, nullString(EncodeFeatures(s.Features)), s.Lyrics)
+		s.Views, nullString(EncodeFeatures(s.Features)), s.Lyrics, rand.Float64())
 	if err != nil {
 		return err
 	}

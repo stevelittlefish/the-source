@@ -119,7 +119,7 @@ func TestMethodsAndPages(t *testing.T) {
 	if w.Code != 405 || !json.Valid(w.Body.Bytes()) {
 		t.Fatalf("%d %s", w.Code, w.Body.String())
 	}
-	for _, path := range []string{"/", "/books", "/books/browse", "/books/random", "/books/excerpts", "/books/1", "/read/1", "/lyrics", "/static/browse.js", "/static/style.css"} {
+	for _, path := range []string{"/", "/books", "/books/browse", "/books/random", "/books/excerpts", "/books/1", "/read/1", "/lyrics", "/lyrics/browse", "/lyrics/random", "/lyrics/excerpts", "/lyrics/10", "/static/browse.js", "/static/songs.js", "/static/song.js", "/static/stanza.js", "/static/style.css"} {
 		w = httptest.NewRecorder()
 		s.ServeHTTP(w, httptest.NewRequest("GET", path, nil))
 		if w.Code != 200 {

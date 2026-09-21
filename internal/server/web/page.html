@@ -7,7 +7,7 @@
  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
  <link rel="stylesheet" href="/static/fonts.css">
  <link rel="stylesheet" href="/static/style.css">
- {{if eq .Kind "random"}}<script src="/static/book.js" type="module"></script>{{else if or (eq .Kind "browse") (eq .Kind "excerpts") (eq .Kind "book") (eq .Kind "read")}}<script src="/static/{{.Kind}}.js" type="module"></script>{{end}}
+ {{if eq .Kind "random"}}<script src="/static/book.js" type="module"></script>{{else if or (eq .Kind "song") (eq .Kind "songrandom")}}<script src="/static/song.js" type="module"></script>{{else if or (eq .Kind "browse") (eq .Kind "excerpts") (eq .Kind "book") (eq .Kind "read") (eq .Kind "songs") (eq .Kind "stanza")}}<script src="/static/{{.Kind}}.js" type="module"></script>{{end}}
 </head>
 <body data-id="{{.ID}}">
  <a class="skip" href="#main">Skip to content</a>
@@ -18,7 +18,7 @@
  <p class="intro">An API-first Project Gutenberg catalogue and text server.</p>
  <section class="home-grid" aria-label="Explore The Source">
  <article><p class="eyebrow">LIBRARY</p><h2><a href="/books">Books →</a></h2><p>Browse the catalogue, pick a book at random, or borrow an excerpt.</p></article>
- <article><p class="eyebrow">LYRICS</p><h2><a href="/lyrics">Lyrics →</a></h2><p>Coming soon.</p></article>
+ <article><p class="eyebrow">LYRICS</p><h2><a href="/lyrics">Lyrics →</a></h2><p>Search millions of songs, pick one at random, or borrow a stanza.</p></article>
  <article><p class="eyebrow">API</p><h2><a href="/docs">Interactive API docs →</a></h2><p>Explore endpoints and try live requests.</p><a href="/api-guide.md">Plain-text client guide</a></article>
  <article><p class="eyebrow">SPECIFICATION</p><h2><a href="/openapi.yaml">OpenAPI specification →</a></h2><p>The structured API reference for your tools.</p></article>
  </section>
@@ -31,7 +31,48 @@
  </section>
  {{else if eq .Kind "lyrics"}}
  <h1>Lyrics</h1>
- <p class="intro">Coming soon.</p>
+ <section class="home-grid" aria-label="Lyrics">
+ <article><p class="eyebrow">BROWSE</p><h2><a href="/lyrics/browse">Browse lyrics →</a></h2><p>Full-text search across titles, artists and the words themselves.</p></article>
+ <article><p class="eyebrow">RANDOM</p><h2><a href="/lyrics/random">Random song →</a></h2><p>Filter by genre and language.</p></article>
+ <article><p class="eyebrow">STANZAS</p><h2><a href="/lyrics/excerpts">Random stanza →</a></h2><p>A single verse or chorus, with its source song.</p></article>
+ </section>
+ {{else if eq .Kind "songs"}}
+ <h1>The Lyrics<br><em>Search</em></h1>
+ <form action="/lyrics/browse" method="get">
+  <label class="search">Search the lyrics<input type="search" name="q" placeholder="A line, a title or an artist" maxlength="256"></label>
+  <label>Genre<select name="tag"><option value="">All genres</option></select></label>
+  <label>Language<select name="language"><option value="all">All languages</option></select></label>
+  <button>Find songs</button>
+ </form>
+ <div class="result-bar"><p id="status" role="status">Loading…</p><a id="api-link" href="/api/v1/lyrics">Inspect this query ↗</a></div>
+ <section id="results" aria-label="Songs"></section>
+ <nav id="pagination" aria-label="Results pages"></nav>
+ <noscript>This interface needs JavaScript to load the API. You can also <a href="/api/v1/lyrics">browse the JSON API directly</a>.</noscript>
+ {{else if eq .Kind "stanza"}}
+ <h1>The Lyrics<br><em>Random Stanza</em></h1>
+ <form action="/lyrics/excerpts" method="get">
+  <label>Genre<select name="tag"><option value="">All genres</option></select></label>
+  <label>Language<select name="language"><option value="all">All languages</option></select></label>
+  {{template "views"}}<button>Another stanza ↻</button>
+ </form>
+ <p id="status" role="status">Loading…</p>
+ <h2 id="source-title"></h2><p id="source-author"></p>
+ <section id="excerpt" class="reader" aria-label="Stanza"></section>
+ <p id="source-links" class="actions"></p>
+ <details><summary>Inspect API response</summary><pre id="json"></pre></details>
+ <noscript>This interface needs JavaScript to load the API. You can also <a href="/api/v1/lyrics/excerpts/random">fetch a stanza from the JSON API</a>.</noscript>
+ {{else if or (eq .Kind "song") (eq .Kind "songrandom")}}
+ <a href="/lyrics/browse">← Browse the lyrics</a>
+ {{if eq .Kind "songrandom"}}<form action="/lyrics/random" method="get"><label>Genre<select name="tag"><option value="">All genres</option></select></label><label>Language<select name="language"><option value="all">All languages</option></select></label>{{template "views"}}<button>Pick another song ↻</button></form>{{end}}
+ <p class="eyebrow">LYRICS · SONG <span id="song-id">{{.ID}}</span></p>
+ <h1 id="title">Loading…</h1>
+ <p id="author" class="song-artist"></p>
+ <p id="status" role="status"></p>
+ <p id="actions" class="actions"></p>
+ <div class="detail-grid"><section class="panel"><h2>Inside the record</h2><dl id="metadata"></dl></section><section class="panel"><h2>API response</h2><pre id="json" tabindex="0" aria-label="Song API JSON">Loading record…</pre></section></div>
+ <h2>Lyrics</h2>
+ <pre id="text" class="reader" aria-label="Lyrics">Loading lyrics…</pre>
+ <noscript>This interface needs JavaScript to load the API. You can also <a href="/api/v1/lyrics">browse the JSON API directly</a>.</noscript>
  {{else}}
  {{if eq .Kind "excerpts"}}
  <h1>Project Gutenberg<br><em>Random Excerpt</em></h1>
@@ -78,3 +119,4 @@
 </body>
 </html>
 {{define "years"}}<label>Publication year from<input name="year_from" type="number" min="1" max="9999" placeholder="Any"></label><label>Publication year to<input name="year_to" type="number" min="1" max="9999" placeholder="Any"></label>{{end}}
+{{define "views"}}<label>Min views<input name="views_from" type="number" min="0" placeholder="Any"></label><label>Max views<input name="views_to" type="number" min="0" placeholder="Any"></label>{{end}}

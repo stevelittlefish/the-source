@@ -1,14 +1,35 @@
 package server
 
 import (
+	"fmt"
 	"log"
 	"math/rand/v2"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/stevelittlefish/the-source/internal/lyrics"
 )
+
+// parseViews reads the optional views_from and views_to bounds, mirroring the
+// year filters on books. Zero (or absent) means unbounded on that side.
+func parseViews(q url.Values) (from, to int, err error) {
+	for key, target := range map[string]*int{"views_from": &from, "views_to": &to} {
+		if !q.Has(key) {
+			continue
+		}
+		n, convErr := strconv.Atoi(q.Get(key))
+		if len(q[key]) != 1 || convErr != nil || n < 0 {
+			return 0, 0, fmt.Errorf("%s must be a non-negative integer, specified once", key)
+		}
+		*target = n
+	}
+	if from != 0 && to != 0 && from > to {
+		return 0, 0, fmt.Errorf("views_from must not exceed views_to")
+	}
+	return from, to, nil
+}
 
 // randomStanza returns the lines of one randomly chosen stanza — a run of
 // non-blank lines — from a lyrics body, reservoir-sampled so the whole song is
@@ -165,13 +186,18 @@ func (s *Server) lyricsRandom(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	q := r.URL.Query()
 	for key := range q {
-		if key != "language" && key != "tag" {
-			fail(w, 400, "invalid_query", "Use language and tag for random lyrics.")
+		if key != "language" && key != "tag" && key != "views_from" && key != "views_to" {
+			fail(w, 400, "invalid_query", "Use language, tag, views_from and views_to for random lyrics.")
 			return
 		}
 	}
 	language, tag := lyricsQuery(q)
-	song, ok, err := s.songs.Random(language, tag)
+	viewsFrom, viewsTo, err := parseViews(q)
+	if err != nil {
+		fail(w, 400, "invalid_query", err.Error())
+		return
+	}
+	song, ok, err := s.songs.Random(lyrics.RandomFilter{Language: language, Tag: tag, ViewsFrom: viewsFrom, ViewsTo: viewsTo})
 	if err != nil {
 		log.Printf("lyrics random: %v", err)
 		fail(w, 500, "lyrics_error", "Cannot select a song.")
@@ -194,17 +220,23 @@ func (s *Server) lyricsExcerpt(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	q := r.URL.Query()
 	for key := range q {
-		if key != "language" && key != "tag" {
-			fail(w, 400, "invalid_query", "Use language and tag for random excerpts.")
+		if key != "language" && key != "tag" && key != "views_from" && key != "views_to" {
+			fail(w, 400, "invalid_query", "Use language, tag, views_from and views_to for random excerpts.")
 			return
 		}
 	}
 	language, tag := lyricsQuery(q)
+	viewsFrom, viewsTo, err := parseViews(q)
+	if err != nil {
+		fail(w, 400, "invalid_query", err.Error())
+		return
+	}
+	filter := lyrics.RandomFilter{Language: language, Tag: tag, ViewsFrom: viewsFrom, ViewsTo: viewsTo}
 	for attempt := 0; attempt < 8; attempt++ {
 		if r.Context().Err() != nil {
 			return
 		}
-		song, ok, err := s.songs.Random(language, tag)
+		song, ok, err := s.songs.Random(filter)
 		if err != nil {
 			log.Printf("lyrics excerpt: %v", err)
 			fail(w, 500, "lyrics_error", "Cannot select a song.")
