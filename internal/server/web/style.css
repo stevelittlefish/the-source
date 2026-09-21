@@ -94,8 +94,22 @@ button:disabled { opacity:.55; cursor:wait; }
 #status { color:var(--muted); font-family:var(--mono); font-size:12px; }
 #api-link { color:var(--accent); }
 
-/* Catalogue grid + cards */
-#results { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+/* Catalogue table */
+#results { overflow-x:auto; }
+.book-table { width:100%; border-collapse:collapse; font-size:14px; }
+.book-table thead th { text-align:left; font:500 10px/1.4 var(--mono); letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted); padding:0 16px 10px; border-bottom:1px solid var(--line-strong); white-space:nowrap; }
+.book-table tbody td { padding:13px 16px; border-bottom:1px solid var(--line); vertical-align:top; }
+.book-table tbody tr:hover { background:var(--panel); }
+.book-table .col-id { font:400 13px/1.5 var(--mono); color:var(--muted); white-space:nowrap; }
+.book-table .col-title { font-weight:600; min-width:220px; }
+.book-table .col-title a:hover { color:var(--accent); }
+.book-table .col-author { color:var(--ink); min-width:160px; }
+.book-table .col-subjects { color:var(--muted); font-size:13px; max-width:280px; }
+.book-table .col-lang { font:400 12px/1.5 var(--mono); color:var(--muted); text-transform:uppercase; white-space:nowrap; }
+.book-table .col-status { white-space:nowrap; }
+.book-table .col-status .badge { margin-top:0; }
+
 article { display:flex; flex-direction:column; padding:22px; border:1px solid var(--line);
   border-radius:0; background:var(--panel); transition:border-color .15s, transform .15s; }
 article:hover { border-color:var(--accent); transform:translateY(-2px); }
@@ -114,8 +128,10 @@ article .author,article .subjects { -webkit-line-clamp:2; }
   padding:5px 9px; border-radius:0; color:var(--muted); }
 .installed { color:var(--accent); border-color:var(--accent); background:var(--accent-soft); }
 
-#pagination { display:flex; justify-content:space-between; gap:30px; padding:28px 0;
+#pagination { display:flex; gap:30px; padding:28px 0;
   font:600 12px/1 var(--mono); letter-spacing:.06em; text-transform:uppercase; }
+/* Keep Next on the right even when there is no Previous. */
+#pagination .next { margin-left:auto; }
 
 /* Detail + panels */
 .actions { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin:26px 0; }
@@ -139,7 +155,7 @@ pre { background:var(--masthead); border:1px solid var(--line-strong); border-ra
 #json { max-height:650px; white-space:pre-wrap; overflow-wrap:anywhere; }
 
 /* The reading column — a humane serif, set apart from the technical chrome */
-.reader { max-width:66ch; margin:32px auto; white-space:pre-wrap; overflow-wrap:anywhere;
+.reader { margin:32px 0; white-space:pre-wrap; overflow-wrap:anywhere;
   font:18px/1.75 var(--serif); color:var(--ink);
   background:var(--panel); border:1px solid var(--line);
   padding:clamp(24px,5vw,60px); }
@@ -158,14 +174,12 @@ summary { cursor:pointer; font:600 12px/1 var(--mono); letter-spacing:.06em;
   text-transform:uppercase; color:var(--accent); }
 
 @media(max-width:950px) {
-  #results { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .detail-grid { grid-template-columns:1fr; }
 }
 @media(max-width:600px) {
   header,main,footer { padding:20px; }
   header { flex-wrap:wrap; }
   header nav { gap:16px; }
-  #results { grid-template-columns:1fr; }
   form { padding:16px; }
   form label,form button { width:100%; }
   .result-bar { align-items:start; flex-direction:column; gap:6px; }
