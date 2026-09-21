@@ -1,9 +1,16 @@
-body { margin:0; background:#101717; color:#ecefe8; font-family:system-ui,sans-serif; }
-header { max-width:1460px; margin:auto; padding:24px 20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:20px; border-bottom:1px solid #374744; }
-header nav { display:flex; gap:24px; flex-wrap:wrap; }
-header a { color:#c6ef87; text-underline-offset:4px; }
-/* Invert the self-contained explorer palette while retaining hue distinctions. */
-#swagger-ui { filter:invert(.88) hue-rotate(180deg); background:#fff; padding:1px 0 30px; }
+/* Datasheet theme for the vendored explorer: light shell + dark masthead to
+   match the rest of The Source. The Swagger UI itself ships light, so we leave
+   its palette alone and only frame it. */
+body { margin:0; background:#eef0f2; color:#161a1f;
+  font-family:'Archivo',system-ui,sans-serif; }
+header { background:#12161b; color:#e7eaee; padding:16px 40px;
+  display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; }
+header a { color:#fff; text-decoration:none; font-weight:700; letter-spacing:-.02em; }
+header nav { display:flex; gap:26px; flex-wrap:wrap;
+  font:600 12px/1 'Space Mono',ui-monospace,monospace; letter-spacing:.08em; text-transform:uppercase; }
+header nav a { color:#a7aeb8; font-weight:600; }
+header nav a:hover { color:#fff; }
+#swagger-ui { max-width:1460px; margin:auto; padding:1px 0 40px; }
 .swagger-ui .wrapper { max-width:1460px; }
 .swagger-ui .info { margin:30px 0; }
 noscript { display:block; padding:30px; }
