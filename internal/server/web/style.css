@@ -96,11 +96,13 @@ button:disabled { opacity:.55; cursor:wait; }
 
 /* Catalogue table */
 #results { overflow-x:auto; }
-.book-table { width:100%; border-collapse:collapse; font-size:14px; }
+.book-table { width:100%; border-collapse:collapse; font-size:14px;
+  background:var(--panel); border:1px solid var(--line); }
 .book-table thead th { text-align:left; font:500 10px/1.4 var(--mono); letter-spacing:.1em;
-  text-transform:uppercase; color:var(--muted); padding:0 16px 10px; border-bottom:1px solid var(--line-strong); white-space:nowrap; }
+  text-transform:uppercase; color:var(--muted); padding:12px 16px; border-bottom:1px solid var(--line-strong); white-space:nowrap; }
 .book-table tbody td { padding:13px 16px; border-bottom:1px solid var(--line); vertical-align:top; }
-.book-table tbody tr:hover { background:var(--panel); }
+.book-table tbody tr:last-child td { border-bottom:none; }
+.book-table tbody tr:hover { background:var(--accent-soft); }
 .book-table .col-id { font:400 13px/1.5 var(--mono); color:var(--muted); white-space:nowrap; }
 .book-table .col-title { font-weight:600; min-width:220px; }
 .book-table .col-title a:hover { color:var(--accent); }
