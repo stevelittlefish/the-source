@@ -29,6 +29,12 @@ CREATE INDEX songs_language_tag ON songs(language, tag);
 CREATE INDEX songs_bucket_views ON songs(bucket, views);
 CREATE INDEX songs_tag_bucket ON songs(tag, bucket);
 CREATE INDEX songs_lang_bucket ON songs(language, bucket);
+-- (language|tag, views) cover the browse COUNT: counting a views range within
+-- one language or tag is answered from the index alone. Without them the count
+-- of a filtered, views-bounded browse falls back to a full table scan, which
+-- on the full corpus drags every lyrics body off disk (seconds per request).
+CREATE INDEX songs_language_views ON songs(language, views);
+CREATE INDEX songs_tag_views ON songs(tag, views);
 CREATE VIRTUAL TABLE songs_fts USING fts5(
     title, artist, lyrics,
     content='songs', content_rowid='id',
