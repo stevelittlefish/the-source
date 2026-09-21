@@ -5,9 +5,7 @@
  <meta name="viewport" content="width=device-width,initial-scale=1">
  <title>{{.Title}} · The Source</title>
  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
- <link rel="preconnect" href="https://fonts.googleapis.com">
- <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
- <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap">
+ <link rel="stylesheet" href="/static/fonts.css">
  <link rel="stylesheet" href="/static/style.css">
  {{if eq .Kind "random"}}<script src="/static/book.js" type="module"></script>{{else if ne .Kind "index"}}<script src="/static/{{.Kind}}.js" type="module"></script>{{end}}
 </head>
