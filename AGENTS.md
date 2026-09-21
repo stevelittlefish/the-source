@@ -32,6 +32,14 @@ religion called Frontend.
    variables. Secrets do not belong in committed configuration.
 4. Stream book text from disk; never casually load _War and Peace_ into memory
    to prove that RAM exists.
+5. Lyrics are a different animal: millions of short songs where the text and the
+   metadata live in one 5.8 GB CSV. That is a database, not a flat file, so the
+   lyrics corpus is a read-only SQLite file (`modernc.org/sqlite`, pure Go)
+   built offline by `cmd/lyricsprep` and queried with FTS5. Run it where the
+   data lives: `go run ./cmd/lyricsprep -in song_lyrics_en.csv -out lyrics.db`.
+   The full CSV and built database stay on The Lemon; only the small sampled
+   `testdata/lyrics_sample.csv` and its `testdata/lyrics.db` are checked in.
+   Lyrics are optional — an empty `lyrics_db_path` runs a books-only server.
 
 ## Engineering habits
 

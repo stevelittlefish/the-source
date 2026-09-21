@@ -1,3 +1,7 @@
 /the-source
 /source.local.toml
 /data/
+# The full lyrics corpus lives on The Lemon, not in the repository. Only the
+# small sampled fixture and its built database are checked in.
+/testdata/song_lyrics_en.csv
+/testdata/song_lyrics_en.csv.zst

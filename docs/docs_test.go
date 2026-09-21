@@ -50,7 +50,7 @@ func TestContractReferences(t *testing.T) {
 	walk(spec)
 	paths := spec["paths"].(map[string]any)
 	ids := map[string]bool{}
-	for _, path := range []string{"/health", "/api/v1/books", "/api/v1/books/{id}", "/api/v1/books/{id}/text", "/api/v1/books/languages", "/api/v1/books/random", "/api/v1/books/excerpts/random"} {
+	for _, path := range []string{"/health", "/api/v1/books", "/api/v1/books/{id}", "/api/v1/books/{id}/text", "/api/v1/books/languages", "/api/v1/books/random", "/api/v1/books/excerpts/random", "/api/v1/lyrics", "/api/v1/lyrics/{id}", "/api/v1/lyrics/{id}/text", "/api/v1/lyrics/random", "/api/v1/lyrics/excerpts/random", "/api/v1/lyrics/tags", "/api/v1/lyrics/languages"} {
 		operations, ok := paths[path].(map[string]any)
 		if !ok {
 			t.Fatalf("missing %s", path)

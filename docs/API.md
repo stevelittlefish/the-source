@@ -121,6 +121,48 @@ Raw text downloads remain unmodified and include the original wrapper.
 If extraction returns 422, retry a bounded number of times or request fewer
 paragraphs. Do not create an infinite loop in honour of infinite literature.
 
+## Lyrics
+
+The lyrics corpus is a separate collection under `/api/v1/lyrics`, backed by a
+prepared read-only SQLite database rather than the book catalogue. It is
+optional: a server started without a lyrics database answers every lyrics
+endpoint with 404 `lyrics_unavailable`.
+
+```sh
+curl --fail-with-body 'http://lemon:45068/api/v1/lyrics/tags'
+curl --fail-with-body 'http://lemon:45068/api/v1/lyrics/languages'
+curl --fail-with-body 'http://lemon:45068/api/v1/lyrics?tag=rap&limit=25'
+curl --fail-with-body 'http://lemon:45068/api/v1/lyrics?q=concrete+jungle'
+curl --fail-with-body 'http://lemon:45068/api/v1/lyrics/10'
+curl --fail-with-body 'http://lemon:45068/api/v1/lyrics/10/text'
+curl --fail-with-body 'http://lemon:45068/api/v1/lyrics/random?tag=pop'
+curl --fail-with-body 'http://lemon:45068/api/v1/lyrics/excerpts/random'
+```
+
+Differences from books worth noting:
+
+- **No English default.** `language` and `tag` are optional filters; omitting
+  them (or `language=all`) searches everything. Both are case-insensitive.
+- **Full-text search.** `q` runs SQLite FTS5 over title, artist and the lyrics
+  body — so you can search by a line as well as by name. Every whitespace-
+  separated word is required; maximum 256 UTF-8 bytes. Empty `q` is plain
+  browsing. Results sort by ascending `id`; page with `next_cursor` as `cursor`.
+- **Lyrics bodies are omitted** from listings, item metadata, random and excerpt
+  responses to keep them light. Fetch the body from `/lyrics/{id}/text`, which
+  returns plain text (including `[Chorus]`-style markers) with no byte-range or
+  conditional-request support.
+- **Random is uniform over the whole table**, independent of storage order;
+  responses carry `Cache-Control: no-store`.
+- **Excerpts return a stanza:** `{"song":{...},"lines":[...]}`. A stanza is a
+  run of consecutive non-blank lines between blank lines; bracketed section
+  markers are dropped and a stanza has at least two lines. On 422
+  `no_suitable_excerpt`, retry a bounded number of times.
+
+Song objects carry `id`, `title`, `artist`, `views`, and the optional
+`tag`, `language`, `year` (implausible values are discarded) and `features`
+(featured artists). The corpus is built offline by `cmd/lyricsprep` from the
+source CSV; see the working notes for how to rebuild it.
+
 ## Errors
 
 Application errors use:
@@ -139,6 +181,10 @@ Application errors use:
 | 405 | method_not_allowed | Use GET or HEAD. |
 | 422 | no_suitable_excerpt | Retry a few times or reduce paragraph count. |
 | 500 | text_error | Server could not open text; inspect server logs. |
+| 404 | song_not_found | Check the song ID. |
+| 404 | no_matching_songs | Broaden the language/tag filters. |
+| 404 | lyrics_unavailable | No lyrics corpus is installed on this server. |
+| 500 | lyrics_error | Server could not query the lyrics database; inspect logs. |
 
 The text endpoint additionally uses ordinary HTTP semantics: 206 for ranges,
 304 for unchanged content, 412 for failed preconditions, and **plain-text

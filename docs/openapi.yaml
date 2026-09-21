@@ -648,6 +648,220 @@
           }
         }
       }
+    },
+    "/api/v1/lyrics": {
+      "get": {
+        "operationId": "listLyrics",
+        "summary": "Browse and search songs",
+        "description": "Ascending id order. With q, runs SQLite FTS5 full-text search over title, artist and lyrics body (each whitespace-separated word required, as a quoted term); without q, plain browsing. Optional language and tag filters. Song lyrics bodies are omitted from listings. Empty results return 200. Numeric offset cursors are not snapshots.",
+        "parameters": [
+          {"$ref": "#/components/parameters/songLanguage"},
+          {"$ref": "#/components/parameters/tag"},
+          {"name": "q", "in": "query", "schema": {"type": "string"}, "description": "Full-text query; maximum 256 UTF-8 bytes.", "example": "concrete jungle"},
+          {"name": "limit", "in": "query", "schema": {"type": "integer", "default": 25, "minimum": 1, "maximum": 100}},
+          {"name": "cursor", "in": "query", "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "Nonnegative offset returned as next_cursor. Omit for first page."}
+        ],
+        "responses": {
+          "200": {"description": "Matching songs without lyrics bodies.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SongPage"}}}},
+          "400": {"$ref": "#/components/responses/Invalid"},
+          "404": {"$ref": "#/components/responses/LyricsMissing"},
+          "405": {"$ref": "#/components/responses/Method"},
+          "500": {"$ref": "#/components/responses/LyricsError"}
+        }
+      },
+      "head": {
+        "operationId": "listLyricsHead",
+        "summary": "Browse and search songs (headers only)",
+        "description": "Same selection/validation as GET; no response body.",
+        "parameters": [
+          {"$ref": "#/components/parameters/songLanguage"},
+          {"$ref": "#/components/parameters/tag"},
+          {"name": "q", "in": "query", "schema": {"type": "string"}, "description": "Full-text query; maximum 256 UTF-8 bytes."},
+          {"name": "limit", "in": "query", "schema": {"type": "integer", "default": 25, "minimum": 1, "maximum": 100}},
+          {"name": "cursor", "in": "query", "schema": {"type": "string", "pattern": "^[0-9]+$"}}
+        ],
+        "responses": {
+          "200": {"description": "Matching songs without lyrics bodies."},
+          "400": {"description": "400 invalid_query: invalid, unknown or repeated selection parameter."},
+          "404": {"description": "404 lyrics_unavailable: no lyrics corpus installed."},
+          "405": {"description": "405 method_not_allowed. Allow: GET, HEAD."},
+          "500": {"description": "500 lyrics_error: the lyrics database could not be queried."}
+        }
+      }
+    },
+    "/api/v1/lyrics/{id}": {
+      "get": {
+        "operationId": "getSong",
+        "summary": "Get song metadata",
+        "description": "Retrieves one song by id. Lyrics body is not included; use the text endpoint.",
+        "parameters": [{"$ref": "#/components/parameters/songId"}],
+        "responses": {
+          "200": {"description": "Song record without lyrics body.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Song"}}}},
+          "404": {"$ref": "#/components/responses/LyricsMissing"},
+          "405": {"$ref": "#/components/responses/Method"},
+          "500": {"$ref": "#/components/responses/LyricsError"}
+        }
+      },
+      "head": {
+        "operationId": "getSongHead",
+        "summary": "Get song metadata (headers only)",
+        "description": "Same selection/validation as GET; no response body.",
+        "parameters": [{"$ref": "#/components/parameters/songId"}],
+        "responses": {
+          "200": {"description": "Song record without lyrics body."},
+          "404": {"description": "404 song_not_found for unknown ids; lyrics_unavailable when no corpus is installed."},
+          "405": {"description": "405 method_not_allowed. Allow: GET, HEAD."},
+          "500": {"description": "500 lyrics_error: the lyrics database could not be queried."}
+        }
+      }
+    },
+    "/api/v1/lyrics/{id}/text": {
+      "get": {
+        "operationId": "getSongText",
+        "summary": "Get a song's lyrics",
+        "description": "UTF-8 plain text lyrics body as stored, including section markers such as [Chorus]. Unlike book text, no byte-range or conditional-request support.",
+        "parameters": [{"$ref": "#/components/parameters/songId"}],
+        "responses": {
+          "200": {"description": "Lyrics body.", "content": {"text/plain": {"schema": {"type": "string"}}}},
+          "404": {"$ref": "#/components/responses/LyricsMissing"},
+          "405": {"$ref": "#/components/responses/Method"},
+          "500": {"$ref": "#/components/responses/LyricsError"}
+        }
+      },
+      "head": {
+        "operationId": "getSongTextHead",
+        "summary": "Get a song's lyrics (headers only)",
+        "description": "Same selection/validation as GET; no response body. Content-Length reflects the lyrics byte length.",
+        "parameters": [{"$ref": "#/components/parameters/songId"}],
+        "responses": {
+          "200": {"description": "Lyrics body headers."},
+          "404": {"description": "404 song_not_found for unknown ids; lyrics_unavailable when no corpus is installed."},
+          "405": {"description": "405 method_not_allowed. Allow: GET, HEAD."},
+          "500": {"description": "500 lyrics_error: the lyrics database could not be queried."}
+        }
+      }
+    },
+    "/api/v1/lyrics/random": {
+      "get": {
+        "operationId": "randomSong",
+        "summary": "Pick a random song",
+        "description": "Uniformly random over all songs matching the optional language and tag filters, independent of storage order. Returns metadata without the lyrics body. Repeats are allowed.",
+        "parameters": [
+          {"$ref": "#/components/parameters/songLanguage"},
+          {"$ref": "#/components/parameters/tag"}
+        ],
+        "responses": {
+          "200": {"description": "Chosen song without lyrics body.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Song"}}}, "headers": {"Cache-Control": {"schema": {"type": "string", "const": "no-store"}}}},
+          "400": {"$ref": "#/components/responses/Invalid"},
+          "404": {"$ref": "#/components/responses/LyricsMissing"},
+          "405": {"$ref": "#/components/responses/Method"},
+          "500": {"$ref": "#/components/responses/LyricsError"}
+        }
+      },
+      "head": {
+        "operationId": "randomSongHead",
+        "summary": "Pick a random song (headers only)",
+        "description": "Same selection/validation as GET; no response body.",
+        "parameters": [
+          {"$ref": "#/components/parameters/songLanguage"},
+          {"$ref": "#/components/parameters/tag"}
+        ],
+        "responses": {
+          "200": {"description": "Chosen song without lyrics body.", "headers": {"Cache-Control": {"schema": {"type": "string", "const": "no-store"}}}},
+          "400": {"description": "400 invalid_query: invalid, unknown or repeated selection parameter."},
+          "404": {"description": "404 no_matching_songs when no song matches; lyrics_unavailable when no corpus is installed."},
+          "405": {"description": "405 method_not_allowed. Allow: GET, HEAD."},
+          "500": {"description": "500 lyrics_error: the lyrics database could not be queried."}
+        }
+      }
+    },
+    "/api/v1/lyrics/excerpts/random": {
+      "get": {
+        "operationId": "randomStanza",
+        "summary": "Get a random stanza from a random song",
+        "description": "Tries up to eight random matching songs. A stanza is a run of consecutive non-blank lines between blank lines; lines that are bracketed section markers such as [Chorus] are dropped, and a stanza must have at least two lines. Chooses uniformly among eligible stanzas within a song. Returns the source song (without its full lyrics body) and the stanza lines.",
+        "parameters": [
+          {"$ref": "#/components/parameters/songLanguage"},
+          {"$ref": "#/components/parameters/tag"}
+        ],
+        "responses": {
+          "200": {"description": "Stanza with source song metadata.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LyricsExcerpt"}}}, "headers": {"Cache-Control": {"schema": {"type": "string", "const": "no-store"}}}},
+          "400": {"$ref": "#/components/responses/Invalid"},
+          "404": {"$ref": "#/components/responses/LyricsMissing"},
+          "405": {"$ref": "#/components/responses/Method"},
+          "422": {"$ref": "#/components/responses/NoStanza"},
+          "500": {"$ref": "#/components/responses/LyricsError"}
+        }
+      },
+      "head": {
+        "operationId": "randomStanzaHead",
+        "summary": "Get a random stanza from a random song (headers only)",
+        "description": "Same selection/validation as GET; no response body.",
+        "parameters": [
+          {"$ref": "#/components/parameters/songLanguage"},
+          {"$ref": "#/components/parameters/tag"}
+        ],
+        "responses": {
+          "200": {"description": "Stanza with source song metadata.", "headers": {"Cache-Control": {"schema": {"type": "string", "const": "no-store"}}}},
+          "400": {"description": "400 invalid_query: invalid, unknown or repeated selection parameter."},
+          "404": {"description": "404 no_matching_songs when no song matches; lyrics_unavailable when no corpus is installed."},
+          "405": {"description": "405 method_not_allowed. Allow: GET, HEAD."},
+          "422": {"description": "422 no_suitable_excerpt: the sampled songs yielded no qualifying stanza."},
+          "500": {"description": "500 lyrics_error: the lyrics database could not be queried."}
+        }
+      }
+    },
+    "/api/v1/lyrics/tags": {
+      "get": {
+        "operationId": "listTags",
+        "summary": "List genre tags",
+        "description": "Sorted distinct genre tags present in the corpus.",
+        "parameters": [],
+        "responses": {
+          "200": {"description": "Genre tags.", "content": {"application/json": {"schema": {"type": "object", "required": ["tags"], "properties": {"tags": {"type": "array", "items": {"type": "string"}, "example": ["pop", "rap"]}}}}}},
+          "404": {"$ref": "#/components/responses/LyricsMissing"},
+          "405": {"$ref": "#/components/responses/Method"},
+          "500": {"$ref": "#/components/responses/LyricsError"}
+        }
+      },
+      "head": {
+        "operationId": "listTagsHead",
+        "summary": "List genre tags (headers only)",
+        "description": "Same selection/validation as GET; no response body.",
+        "parameters": [],
+        "responses": {
+          "200": {"description": "Genre tags."},
+          "404": {"description": "404 lyrics_unavailable: no lyrics corpus installed."},
+          "405": {"description": "405 method_not_allowed. Allow: GET, HEAD."},
+          "500": {"description": "500 lyrics_error: the lyrics database could not be queried."}
+        }
+      }
+    },
+    "/api/v1/lyrics/languages": {
+      "get": {
+        "operationId": "listSongLanguages",
+        "summary": "List song languages",
+        "description": "Sorted distinct language codes present in the corpus.",
+        "parameters": [],
+        "responses": {
+          "200": {"description": "Language codes.", "content": {"application/json": {"schema": {"type": "object", "required": ["languages"], "properties": {"languages": {"type": "array", "items": {"type": "string"}, "example": ["en", "fr"]}}}}}},
+          "404": {"$ref": "#/components/responses/LyricsMissing"},
+          "405": {"$ref": "#/components/responses/Method"},
+          "500": {"$ref": "#/components/responses/LyricsError"}
+        }
+      },
+      "head": {
+        "operationId": "listSongLanguagesHead",
+        "summary": "List song languages (headers only)",
+        "description": "Same selection/validation as GET; no response body.",
+        "parameters": [],
+        "responses": {
+          "200": {"description": "Language codes."},
+          "404": {"description": "404 lyrics_unavailable: no lyrics corpus installed."},
+          "405": {"description": "405 method_not_allowed. Allow: GET, HEAD."},
+          "500": {"description": "500 lyrics_error: the lyrics database could not be queried."}
+        }
+      }
     }
   },
   "components": {
@@ -704,6 +918,27 @@
           "minimum": 1
         },
         "example": 1342
+      },
+      "songLanguage": {
+        "name": "language",
+        "in": "query",
+        "description": "Optional language filter for songs. Unlike books, there is no English default: omission or all removes the filter. Trimmed and case-insensitive.",
+        "schema": {"type": "string", "minLength": 1},
+        "examples": {"english": {"value": "en"}, "all": {"value": "all"}}
+      },
+      "tag": {
+        "name": "tag",
+        "in": "query",
+        "description": "Optional genre filter (e.g. rap, pop, rock, rb, country, misc). Trimmed and case-insensitive.",
+        "schema": {"type": "string", "minLength": 1},
+        "example": "rap"
+      },
+      "songId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {"type": "integer", "minimum": 1},
+        "example": 10
       }
     },
     "schemas": {
@@ -844,6 +1079,38 @@
           }
         }
       },
+      "Song": {
+        "type": "object",
+        "required": ["id", "title", "artist", "views"],
+        "properties": {
+          "id": {"type": "integer", "minimum": 1, "example": 10},
+          "title": {"type": "string", "example": "Killa Cam"},
+          "artist": {"type": "string", "example": "Cam'ron"},
+          "tag": {"type": "string", "description": "Genre tag. Omitted when unknown.", "example": "rap"},
+          "language": {"type": "string", "description": "Language code. Omitted when unknown.", "example": "en"},
+          "year": {"type": "integer", "description": "Release year; only plausible values are kept, junk is omitted.", "example": 2004},
+          "views": {"type": "integer", "minimum": 0, "description": "Genius view count; useful as a popularity signal."},
+          "features": {"type": "array", "items": {"type": "string"}, "description": "Featured artists, parsed from the source array. Omitted when none."},
+          "lyrics": {"type": "string", "description": "Lyrics body. Present only where explicitly documented; omitted from listings, item metadata, random and excerpt responses."}
+        }
+      },
+      "SongPage": {
+        "type": "object",
+        "required": ["songs", "total", "next_cursor"],
+        "properties": {
+          "songs": {"type": "array", "items": {"$ref": "#/components/schemas/Song"}},
+          "total": {"type": "integer", "minimum": 0},
+          "next_cursor": {"type": "string", "pattern": "^[0-9]*$", "description": "Empty means no next page. Otherwise pass unchanged with the same filters and limit."}
+        }
+      },
+      "LyricsExcerpt": {
+        "type": "object",
+        "required": ["song", "lines"],
+        "properties": {
+          "song": {"$ref": "#/components/schemas/Song"},
+          "lines": {"type": "array", "minItems": 2, "items": {"type": "string"}, "description": "The lines of one stanza, section markers removed."}
+        }
+      },
       "Error": {
         "type": "object",
         "required": [
@@ -918,6 +1185,18 @@
             }
           }
         }
+      },
+      "LyricsMissing": {
+        "description": "404: song_not_found for unknown song ids; no_matching_songs for empty random selection; lyrics_unavailable when no lyrics corpus is installed.",
+        "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+      },
+      "LyricsError": {
+        "description": "500 lyrics_error: the lyrics database could not be queried.",
+        "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+      },
+      "NoStanza": {
+        "description": "422 no_suitable_excerpt: the sampled songs yielded no qualifying stanza. Does not mean the whole corpus lacks stanzas.",
+        "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
       }
     }
   }
