@@ -1,6 +1,6 @@
 import {getJSON,node,link,failure,yearFilters} from './common.js';
 try {
- const random = location.pathname === '/random';
+ const random = location.pathname === '/books/random';
  const params = new URLSearchParams(location.search);
  if (random) {
   yearFilters(document.querySelector('form'),params);

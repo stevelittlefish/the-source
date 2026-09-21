@@ -29,14 +29,19 @@ func (s *Server) routes() {
 		w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
 		http.ServeFileFS(w, r, docs.Files, "API.md")
 	})
-	s.mux.HandleFunc("GET /excerpts", func(w http.ResponseWriter, r *http.Request) { s.page(w, "excerpts", "Random excerpt", 0) })
-	s.mux.HandleFunc("GET /random", func(w http.ResponseWriter, r *http.Request) { s.page(w, "random", "Random book", 0) })
 	assets, _ := fs.Sub(web, "web")
 	s.mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(assets)))
 	s.mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) { s.page(w, "index", "The Source", 0) })
-	s.mux.HandleFunc("GET /books", func(w http.ResponseWriter, r *http.Request) { s.page(w, "browse", "Browse the library", 0) })
+	// Books section: a landing hub and its pages, all under /books.
+	s.mux.HandleFunc("GET /books", func(w http.ResponseWriter, r *http.Request) { s.page(w, "books", "Books", 0) })
+	s.mux.HandleFunc("GET /books/{$}", func(w http.ResponseWriter, r *http.Request) { s.page(w, "books", "Books", 0) })
+	s.mux.HandleFunc("GET /books/browse", func(w http.ResponseWriter, r *http.Request) { s.page(w, "browse", "Browse books", 0) })
+	s.mux.HandleFunc("GET /books/random", func(w http.ResponseWriter, r *http.Request) { s.page(w, "random", "Random book", 0) })
+	s.mux.HandleFunc("GET /books/excerpts", func(w http.ResponseWriter, r *http.Request) { s.page(w, "excerpts", "Random excerpt", 0) })
 	s.mux.HandleFunc("GET /books/{id}", func(w http.ResponseWriter, r *http.Request) { s.bookPage(w, r, "book") })
 	s.mux.HandleFunc("GET /read/{id}", func(w http.ResponseWriter, r *http.Request) { s.bookPage(w, r, "read") })
+	// Lyrics section: placeholder for now.
+	s.mux.HandleFunc("GET /lyrics", func(w http.ResponseWriter, r *http.Request) { s.page(w, "lyrics", "Lyrics", 0) })
 }
 func (s *Server) bookPage(w http.ResponseWriter, r *http.Request, kind string) {
 	id, err := strconv.Atoi(r.PathValue("id"))

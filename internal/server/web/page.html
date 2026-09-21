@@ -7,25 +7,35 @@
  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
  <link rel="stylesheet" href="/static/fonts.css">
  <link rel="stylesheet" href="/static/style.css">
- {{if eq .Kind "random"}}<script src="/static/book.js" type="module"></script>{{else if ne .Kind "index"}}<script src="/static/{{.Kind}}.js" type="module"></script>{{end}}
+ {{if eq .Kind "random"}}<script src="/static/book.js" type="module"></script>{{else if or (eq .Kind "browse") (eq .Kind "excerpts") (eq .Kind "book") (eq .Kind "read")}}<script src="/static/{{.Kind}}.js" type="module"></script>{{end}}
 </head>
 <body data-id="{{.ID}}">
  <a class="skip" href="#main">Skip to content</a>
- <header><a class="brand" href="/">The Source</a><nav aria-label="Main"><a href="/books">Catalogue</a><a href="/books?available=true">Installed texts</a><a href="/random">Random book</a><a href="/docs">API docs ↗</a></nav></header>
+ <header><a class="brand" href="/">The Source</a><nav aria-label="Main"><a href="/books">Books</a><a href="/lyrics">Lyrics</a><a href="/docs">API docs ↗</a></nav></header>
  <main id="main">
  {{if eq .Kind "index"}}
  <h1>The Source</h1>
+ <p class="intro">An API-first Project Gutenberg catalogue and text server.</p>
  <section class="home-grid" aria-label="Explore The Source">
- <article><p class="eyebrow">BROWSE</p><h2><a href="/books">Browse books →</a></h2><p>Search titles, authors and subjects. Read or download installed texts.</p></article>
- <article><p class="eyebrow">RANDOM</p><h2><a href="/random">Random book →</a></h2><p>Filter by language and original publication year.</p></article>
- <article><p class="eyebrow">EXCERPTS</p><h2><a href="/excerpts">Random excerpt →</a></h2><p>Complete paragraphs, with source metadata.</p></article>
+ <article><p class="eyebrow">LIBRARY</p><h2><a href="/books">Books →</a></h2><p>Browse the catalogue, pick a book at random, or borrow an excerpt.</p></article>
+ <article><p class="eyebrow">LYRICS</p><h2><a href="/lyrics">Lyrics →</a></h2><p>Coming soon.</p></article>
  <article><p class="eyebrow">API</p><h2><a href="/docs">Interactive API docs →</a></h2><p>Explore endpoints and try live requests.</p><a href="/api-guide.md">Plain-text client guide</a></article>
  <article><p class="eyebrow">SPECIFICATION</p><h2><a href="/openapi.yaml">OpenAPI specification →</a></h2><p>The structured API reference for your tools.</p></article>
  </section>
+ {{else if eq .Kind "books"}}
+ <h1>Books</h1>
+ <section class="home-grid" aria-label="Books">
+ <article><p class="eyebrow">BROWSE</p><h2><a href="/books/browse">Browse books →</a></h2><p>Search titles, authors and subjects. Read or download installed texts.</p></article>
+ <article><p class="eyebrow">RANDOM</p><h2><a href="/books/random">Random book →</a></h2><p>Filter by language and original publication year.</p></article>
+ <article><p class="eyebrow">EXCERPTS</p><h2><a href="/books/excerpts">Random excerpt →</a></h2><p>Complete paragraphs, with source metadata.</p></article>
+ </section>
+ {{else if eq .Kind "lyrics"}}
+ <h1>Lyrics</h1>
+ <p class="intro">Coming soon.</p>
  {{else}}
  {{if eq .Kind "excerpts"}}
  <h1>Project Gutenberg<br><em>Random Excerpt</em></h1>
- <form action="/excerpts" method="get">
+ <form action="/books/excerpts" method="get">
  <label>Paragraphs<input name="paragraphs" type="number" min="1" max="10" value="3" required></label>
  <label>Language<select name="language"><option value="en">English</option><option value="all">All languages</option></select></label>
  {{template "years" .}}<button>Another excerpt ↻</button>
@@ -38,7 +48,7 @@
  {{else}}
  {{if eq .Kind "browse"}}
  <h1>Project Gutenberg<br><em>The Catalogue</em></h1>
- <form action="/books" method="get">
+ <form action="/books/browse" method="get">
   <label class="search">Search the library<input type="search" name="q" placeholder="Title, author or subject" maxlength="256"></label>
   <label>Language<select name="language"><option value="en">English</option><option value="all">All languages</option></select></label>
   <label>Text availability<select name="available"><option value="">All records</option><option value="true">Text installed</option><option value="false">Catalogue only</option></select></label>
@@ -48,8 +58,8 @@
  <section id="results" aria-label="Books"></section>
  <nav id="pagination" aria-label="Results pages"></nav>
  {{else}}
- <a href="/books">← Browse the library</a>
- {{if eq .Kind "random"}}<form action="/random" method="get"><label>Language<select name="language"><option value="en">English</option><option value="all">All languages</option></select></label>{{template "years" .}}<button>Pick another book ↻</button></form>{{end}}
+ <a href="/books/browse">← Browse the library</a>
+ {{if eq .Kind "random"}}<form action="/books/random" method="get"><label>Language<select name="language"><option value="en">English</option><option value="all">All languages</option></select></label>{{template "years" .}}<button>Pick another book ↻</button></form>{{end}}
  <p class="eyebrow">PROJECT GUTENBERG · BOOK <span id="book-id">{{.ID}}</span></p>
  <h1 id="title">Loading…</h1>
  <p id="author"></p>

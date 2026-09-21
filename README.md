@@ -70,7 +70,7 @@ remove the filter. Empty language values are rejected. No matches returns
 404 `no_matching_books`; responses are not cached. Repeats are possible:
 randomness has no recollection of your previous literary disappointment.
 
-The **Random book** page at `/random` calls this API and shows metadata,
+The **Random book** page at `/books/random` calls this API and shows metadata,
 JSON, read/download links, a permanent book link, and a language selector.
 Language defaults apply to selection endpoints; fetching a specific ID still
 retrieves that book regardless of language.
@@ -145,7 +145,7 @@ is needed. Both random UI pages provide optional year controls.
 `GET /api/v1/books/excerpts/random?paragraphs=3` returns
 `{"book":{...},"paragraphs":["...","...","..."]}`. Paragraph count defaults to
 3 and must be 1–10. English is the default; `language=all` explicitly removes
-the filter. The UI is at `/excerpts`.
+the filter. The UI is at `/books/excerpts`.
 
 The extractor requires Gutenberg START/END markers, removes the wrapper,
 and heuristically rejects headings, contents, credits and copyright matter.

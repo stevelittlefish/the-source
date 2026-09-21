@@ -47,7 +47,7 @@ try {
  if (data.books.length) document.querySelector('#status').append(document.createTextNode(' · Showing ' + (offset + 1) + '–' + (offset + data.books.length)));
  function pageLink(text,cursor,cls) {
   const next = new URLSearchParams(params); next.set('cursor',String(cursor));
-  const a = link(text,'/books?' + next); a.className = cls; return a;
+  const a = link(text,'/books/browse?' + next); a.className = cls; return a;
  }
  if (offset > 0) pagination.append(pageLink('← Previous',Math.max(0,offset-limit),'prev'));
  if (data.next_cursor) pagination.append(pageLink('Next →',data.next_cursor,'next'));

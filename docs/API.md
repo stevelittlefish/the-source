@@ -149,5 +149,6 @@ decoding JSON. HEAD never has a body. Multi-range responses may be multipart.
 
 Treat `docs/openapi.yaml` as the API contract. This guide explains operational
 details. When changing endpoints, update both documents and API tests in the
-same commit. HTML routes (`/books`, `/random`, `/excerpts`, `/read/{id}`)
-are human interfaces; clients should use `/api/v1/...`.
+same commit. HTML routes (`/books`, `/books/browse`, `/books/random`,
+`/books/excerpts`, `/read/{id}`, `/lyrics`) are human interfaces; clients
+should use `/api/v1/...`.
