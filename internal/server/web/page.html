@@ -51,7 +51,7 @@
  <nav id="pagination" aria-label="Results pages"></nav>
  {{else}}
  <a href="/books">← Browse the library</a>
- {{if eq .Kind "random"}}<form action="/random" method="get"><label>Language<select name="language"><option value="en">English</option><option value="all">All languages</option></select></label>{{template "years" .}}<button>Pick another book ↻</button><span class="muted">Installed texts only. Serendipity included.</span></form>{{end}}
+ {{if eq .Kind "random"}}<form action="/random" method="get"><label>Language<select name="language"><option value="en">English</option><option value="all">All languages</option></select></label>{{template "years" .}}<button>Pick another book ↻</button></form>{{end}}
  <p class="eyebrow">PROJECT GUTENBERG · BOOK <span id="book-id">{{.ID}}</span></p>
  <h1 id="title">Opening book…</h1>
  <p id="author"></p>
