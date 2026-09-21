@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -36,6 +37,19 @@ func ensureLyricsDB(dbPath, csvPath string) error {
 	if _, err := os.Stat(csvPath); err != nil {
 		return fmt.Errorf("no lyrics database at %s and its lyrics_csv_path is unreadable: %w", dbPath, err)
 	}
+	// Probe the target directory for writability before handing off to SQLite,
+	// whose "unable to open database file (14)" hides the underlying reason. A
+	// bare os error names it: read-only filesystem, permission denied (often a
+	// bind mount owned by another uid, or NFS root_squash), out of space.
+	dir := filepath.Dir(dbPath)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("lyrics directory %s is not usable: %w", dir, err)
+	}
+	probe := filepath.Join(dir, ".write-test")
+	if err := os.WriteFile(probe, []byte("ok"), 0o644); err != nil {
+		return fmt.Errorf("lyrics directory %s is not writable, so the database cannot be built there: %w; mount it read-write and make it writable by the container user", dir, err)
+	}
+	os.Remove(probe)
 	log.Printf("no lyrics database at %s; building it from %s (one-time, several minutes)", dbPath, csvPath)
 	tmp := dbPath + ".building"
 	os.Remove(tmp) // clear any leftover from a previous aborted build
