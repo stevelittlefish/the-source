@@ -16,23 +16,21 @@
  {{if eq .Kind "index"}}
  <h1>The Source</h1>
  <section class="home-grid" aria-label="Explore The Source">
- <article><p class="eyebrow">THE LIBRARY</p><h2><a href="/books">Browse books →</a></h2><p>Search titles, authors and subjects. Read or download installed texts.</p></article>
- <article><p class="eyebrow">SERENDIPITY</p><h2><a href="/random">Random book →</a></h2><p>Let the library choose. Filter by language and original publication year.</p></article>
- <article><p class="eyebrow">A LITTLE PROSE</p><h2><a href="/excerpts">Random excerpt →</a></h2><p>Complete paragraphs, with source metadata. Less paperwork, more story.</p></article>
- <article><p class="eyebrow">FOR BUILDERS</p><h2><a href="/docs">Interactive API docs →</a></h2><p>Explore endpoints and try live requests. Batteries included, dependency justified.</p><a href="/api-guide.md">Plain-text client guide</a></article>
- <article><p class="eyebrow">THE CONTRACT</p><h2><a href="/openapi.yaml">OpenAPI specification →</a></h2><p>The structured API reference, ready for your tools to ingest.</p></article>
+ <article><p class="eyebrow">BROWSE</p><h2><a href="/books">Browse books →</a></h2><p>Search titles, authors and subjects. Read or download installed texts.</p></article>
+ <article><p class="eyebrow">RANDOM</p><h2><a href="/random">Random book →</a></h2><p>Filter by language and original publication year.</p></article>
+ <article><p class="eyebrow">EXCERPTS</p><h2><a href="/excerpts">Random excerpt →</a></h2><p>Complete paragraphs, with source metadata.</p></article>
+ <article><p class="eyebrow">API</p><h2><a href="/docs">Interactive API docs →</a></h2><p>Explore endpoints and try live requests.</p><a href="/api-guide.md">Plain-text client guide</a></article>
+ <article><p class="eyebrow">SPECIFICATION</p><h2><a href="/openapi.yaml">OpenAPI specification →</a></h2><p>The structured API reference for your tools.</p></article>
  </section>
  {{else}}
- <p><a href="/excerpts">Random excerpt ↗</a></p>
  {{if eq .Kind "excerpts"}}
- <p class="eyebrow">PROJECT GUTENBERG · BETWEEN THE COVERS</p>
- <h1>A little less paperwork.<br><em>A little more story.</em></h1>
+ <h1>Project Gutenberg<br><em>Random Excerpt</em></h1>
  <form action="/excerpts" method="get">
  <label>Paragraphs<input name="paragraphs" type="number" min="1" max="10" value="3" required></label>
  <label>Language<select name="language"><option value="en">English</option><option value="all">All languages</option></select></label>
  {{template "years" .}}<button>Another excerpt ↻</button>
  </form>
- <p id="status" role="status">Finding a passage…</p>
+ <p id="status" role="status">Loading…</p>
  <h2 id="source-title"></h2><p id="source-author"></p>
  <section id="excerpt" class="reader" aria-label="Excerpt"></section>
  <p id="source-links" class="actions"></p>
@@ -41,22 +39,22 @@
  {{if eq .Kind "browse"}}
  <h1>Project Gutenberg<br><em>The Catalogue</em></h1>
  <form action="/books" method="get">
-  <label class="search">Search the library<input type="search" name="q" placeholder="A title, an author, an unreasonable obsession…" maxlength="256"></label>
+  <label class="search">Search the library<input type="search" name="q" placeholder="Title, author or subject" maxlength="256"></label>
   <label>Language<select name="language"><option value="en">English</option><option value="all">All languages</option></select></label>
   <label>Text availability<select name="available"><option value="">All records</option><option value="true">Text installed</option><option value="false">Catalogue only</option></select></label>
   <button>Find books</button>
  </form>
- <div class="result-bar"><p id="status" role="status">Opening the catalogue…</p><a id="api-link" href="/api/v1/books">Inspect this query ↗</a></div>
+ <div class="result-bar"><p id="status" role="status">Loading…</p><a id="api-link" href="/api/v1/books">Inspect this query ↗</a></div>
  <section id="results" aria-label="Books"></section>
  <nav id="pagination" aria-label="Results pages"></nav>
  {{else}}
  <a href="/books">← Browse the library</a>
  {{if eq .Kind "random"}}<form action="/random" method="get"><label>Language<select name="language"><option value="en">English</option><option value="all">All languages</option></select></label>{{template "years" .}}<button>Pick another book ↻</button></form>{{end}}
  <p class="eyebrow">PROJECT GUTENBERG · BOOK <span id="book-id">{{.ID}}</span></p>
- <h1 id="title">Opening book…</h1>
+ <h1 id="title">Loading…</h1>
  <p id="author"></p>
  <p id="status" role="status"></p>
- {{if or (eq .Kind "book") (eq .Kind "random")}}<p id="actions" class="actions"></p><div class="detail-grid"><section class="panel"><h2>Inside the record</h2><dl id="metadata"></dl></section><section class="panel"><p class="eyebrow">UNDER THE HOOD</p><h2>The actual data.</h2><p class="muted">Straight from the API. No literary embellishment.</p><pre id="json" tabindex="0" aria-label="Book API JSON">Loading record…</pre></section></div>{{else}}
+ {{if or (eq .Kind "book") (eq .Kind "random")}}<p id="actions" class="actions"></p><div class="detail-grid"><section class="panel"><h2>Inside the record</h2><dl id="metadata"></dl></section><section class="panel"><h2>API response</h2><pre id="json" tabindex="0" aria-label="Book API JSON">Loading record…</pre></section></div>{{else}}
  <p><a href="/books/{{.ID}}">Book details</a> · <a href="/api/v1/books/{{.ID}}/text">Plain text</a></p>
  <pre id="text" class="reader" aria-label="Book text"></pre>
  <button id="load-more" hidden>Load more text</button>
@@ -66,7 +64,7 @@
  <noscript>This interface needs JavaScript to load the API. You can also <a href="/api/v1/books">browse the JSON API directly</a>.</noscript>
  {{end}}
  </main>
- <footer>The Source · Books on tap. No subscription to your own curiosity.</footer>
+ <footer>The Source · Project Gutenberg</footer>
 </body>
 </html>
 {{define "years"}}<label>Publication year from<input name="year_from" type="number" min="1" max="9999" placeholder="Any"></label><label>Publication year to<input name="year_to" type="number" min="1" max="9999" placeholder="Any"></label>{{end}}
