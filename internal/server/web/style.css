@@ -23,12 +23,15 @@
 body {
   margin:0; background:var(--paper); color:var(--ink);
   font:15px/1.6 var(--sans); min-height:100vh;
+  display:flex; flex-direction:column;
   -webkit-font-smoothing:antialiased;
 }
 
 /* Layout rails */
-header,main,footer { max-width:1240px; margin:auto; padding:24px 40px; }
-main { padding-top:44px; padding-bottom:64px; }
+header,main,footer { width:100%; max-width:1240px; margin-inline:auto; padding:24px 40px; }
+/* main grows so the footer is pinned to the bottom on short pages. */
+main { flex:1 0 auto; padding-top:44px; padding-bottom:64px; }
+footer { flex-shrink:0; }
 
 /* Masthead — a dark contained command bar */
 header {
