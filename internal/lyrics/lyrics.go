@@ -36,11 +36,13 @@ type Store struct{ db *sql.DB }
 
 // Filter narrows a listing. An empty field means "do not filter on this".
 type Filter struct {
-	Language string
-	Tag      string
-	Query    string
-	Limit    int
-	Offset   int
+	Language  string
+	Tag       string
+	Query     string
+	ViewsFrom int
+	ViewsTo   int
+	Limit     int
+	Offset    int
 }
 
 // RandomFilter narrows random selection. Empty strings and zero bounds mean
@@ -128,6 +130,14 @@ func (s *Store) Search(f Filter) ([]Song, int, error) {
 	if f.Tag != "" {
 		where = append(where, "s.tag = ?")
 		args = append(args, f.Tag)
+	}
+	if f.ViewsFrom > 0 {
+		where = append(where, "s.views >= ?")
+		args = append(args, f.ViewsFrom)
+	}
+	if f.ViewsTo > 0 {
+		where = append(where, "s.views <= ?")
+		args = append(args, f.ViewsTo)
 	}
 	from := "songs s"
 	if match != "" {

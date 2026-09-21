@@ -42,7 +42,7 @@
   <label class="search">Search the lyrics<input type="search" name="q" placeholder="A line, a title or an artist" maxlength="256"></label>
   <label>Genre<select name="tag"><option value="">All genres</option></select></label>
   <label>Language<select name="language"><option value="all">All languages</option></select></label>
-  <button>Find songs</button>
+  {{template "views"}}<button>Find songs</button>
  </form>
  <div class="result-bar"><p id="status" role="status">Loading…</p><a id="api-link" href="/api/v1/lyrics">Inspect this query ↗</a></div>
  <section id="results" aria-label="Songs"></section>

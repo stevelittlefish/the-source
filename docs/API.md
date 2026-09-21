@@ -149,7 +149,9 @@ Differences from books worth noting:
   UTF-8 bytes. Results are ranked by relevance — a title match outweighs an
   artist match, which outweighs a body match, and the more-viewed song wins
   ties — so the obvious hit surfaces first. Empty `q` falls back to plain
-  browsing in `id` order. Page with `next_cursor` as `cursor`.
+  browsing in `id` order. Page with `next_cursor` as `cursor`. Browse also
+  accepts `views_from`/`views_to` (same bounds as random) to filter by
+  popularity.
 - **Lyrics bodies are omitted** from listings, item metadata, random and excerpt
   responses to keep them light. Fetch the body from `/lyrics/{id}/text`, which
   returns plain text (including `[Chorus]`-style markers) with no byte-range or

@@ -11,9 +11,11 @@ if (tag && ![...form.elements.tag.options].some(option => option.value === tag))
 form.elements.tag.value = tag;
 if (![...form.elements.language.options].some(option => option.value === language)) form.elements.language.add(new Option(language, language));
 form.elements.language.value = language;
+for (const key of ['views_from', 'views_to']) form.elements[key].value = params.get(key) || '';
 form.addEventListener('formdata', event => {
  if (!form.elements.tag.value) event.formData.delete('tag');
  if (form.elements.language.value === 'all') event.formData.delete('language');
+ for (const key of ['views_from', 'views_to']) if (!form.elements[key].value) event.formData.delete(key);
 });
 function fill(select, path, key, current) {
  return getJSON(path).then(data => {

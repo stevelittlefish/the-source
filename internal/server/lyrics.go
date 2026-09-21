@@ -92,7 +92,7 @@ func (s *Server) lyricsList(w http.ResponseWriter, r *http.Request) {
 	}
 	q := r.URL.Query()
 	for key, values := range q {
-		if (key != "language" && key != "tag" && key != "q" && key != "limit" && key != "cursor") || len(values) != 1 {
+		if (key != "language" && key != "tag" && key != "q" && key != "limit" && key != "cursor" && key != "views_from" && key != "views_to") || len(values) != 1 {
 			fail(w, 400, "invalid_query", "Unknown or repeated query parameter.")
 			return
 		}
@@ -119,8 +119,14 @@ func (s *Server) lyricsList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	language, tag := lyricsQuery(q)
+	viewsFrom, viewsTo, err := parseViews(q)
+	if err != nil {
+		fail(w, 400, "invalid_query", err.Error())
+		return
+	}
 	songs, total, err := s.songs.Search(lyrics.Filter{
-		Language: language, Tag: tag, Query: q.Get("q"), Limit: limit, Offset: offset,
+		Language: language, Tag: tag, Query: q.Get("q"),
+		ViewsFrom: viewsFrom, ViewsTo: viewsTo, Limit: limit, Offset: offset,
 	})
 	if err != nil {
 		log.Printf("lyrics search: %v", err)
