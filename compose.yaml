@@ -1,40 +1,10 @@
 services:
   source:
     build: .
+    restart: unless-stopped
     ports:
       - "45068:45068"
     volumes:
-      - type: bind
-        source: /srv/the-source
-        target: /var/lib/source
-        bind:
-          create_host_path: true
-      # The Lemon's library: metadata and extracted books, under one roof.
-      - type: bind
-        source: /mnt/data/gutenberg
-        target: /data/gutenberg
-        read_only: true
-        bind:
-          create_host_path: false
-      # The lyrics corpus: the prepared database plus the raw CSV it is built
-      # from. Writable, because the server builds the database here on first
-      # start when it is missing (then only queries it). Drop just the CSV in
-      # and the first boot prepares the database; no separate prep step.
-      - type: bind
-        source: /mnt/data/lyrics
-        target: /data/lyrics
-        bind:
-          create_host_path: false
-    read_only: true
-    # The root filesystem is read-only, so give the process a writable scratch
-    # area. The first-boot lyrics build steers SQLite's temp files onto the
-    # writable /data/lyrics mount, but this covers anything else that expects a
-    # writable /tmp under the read-only root.
-    tmpfs:
-      - /tmp
-    cap_drop:
-      - ALL
-    security_opt:
-      - no-new-privileges:true
-    restart: unless-stopped
-    stop_grace_period: 15s
+      - /srv/the-source:/var/lib/source
+      - /mnt/data/gutenberg:/data/gutenberg
+      - /mnt/data/lyrics:/data/lyrics
