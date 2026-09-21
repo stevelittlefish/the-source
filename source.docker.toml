@@ -2,4 +2,8 @@ catalog_path = "/data/gutenberg/pg_catalog.csv"
 books_dir = "/data/gutenberg/cache/epub"
 year_index_path = "/var/lib/source/year-index.json"
 lyrics_db_path = "/data/lyrics/lyrics.db"
+# Raw Genius corpus. If lyrics_db_path does not exist, the server builds it from
+# this CSV on first start (one-time, several minutes). Drop the CSV beside the
+# database and the deployment needs no separate prep step.
+lyrics_csv_path = "/data/lyrics/song_lyrics_en.csv"
 server_addr = ":45068"

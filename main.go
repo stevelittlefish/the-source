@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -16,6 +17,38 @@ import (
 	"github.com/stevelittlefish/the-source/internal/lyrics"
 	"github.com/stevelittlefish/the-source/internal/server"
 )
+
+// ensureLyricsDB builds the lyrics database from the CSV when it does not yet
+// exist, so a fresh deployment needs only the raw corpus. An existing database
+// is left untouched (rebuild by deleting it). If neither the database nor a
+// readable CSV is present, it fails loudly rather than serve no lyrics. The
+// build goes to a temporary file renamed into place, so a crash mid-import
+// never leaves a half-written database that would look complete next start.
+func ensureLyricsDB(dbPath, csvPath string) error {
+	if _, err := os.Stat(dbPath); err == nil {
+		return nil // already built
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	if csvPath == "" {
+		return fmt.Errorf("no lyrics database at %s and no lyrics_csv_path to build one from", dbPath)
+	}
+	if _, err := os.Stat(csvPath); err != nil {
+		return fmt.Errorf("no lyrics database at %s and its lyrics_csv_path is unreadable: %w", dbPath, err)
+	}
+	log.Printf("no lyrics database at %s; building it from %s (one-time, several minutes)", dbPath, csvPath)
+	tmp := dbPath + ".building"
+	os.Remove(tmp) // clear any leftover from a previous aborted build
+	if err := lyrics.Import(csvPath, tmp, false); err != nil {
+		os.Remove(tmp)
+		return fmt.Errorf("build lyrics database: %w", err)
+	}
+	if err := os.Rename(tmp, dbPath); err != nil {
+		os.Remove(tmp)
+		return fmt.Errorf("install lyrics database: %w", err)
+	}
+	return nil
+}
 
 func main() {
 	path := flag.String("config", "source.dev.toml", "TOML configuration file")
@@ -30,6 +63,9 @@ func main() {
 	}
 	var songs *lyrics.Store
 	if c.LyricsDBPath != "" {
+		if err := ensureLyricsDB(c.LyricsDBPath, c.LyricsCSVPath); err != nil {
+			log.Fatal(err)
+		}
 		songs, err = lyrics.Open(c.LyricsDBPath)
 		if err != nil {
 			log.Fatal(err)

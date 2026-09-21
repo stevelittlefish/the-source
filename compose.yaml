@@ -16,12 +16,13 @@ services:
         read_only: true
         bind:
           create_host_path: false
-      # The prepared lyrics database, built on the host by cmd/lyricsprep.
-      # Read-only: the server only queries it. Build it before deploying.
+      # The lyrics corpus: the prepared database plus the raw CSV it is built
+      # from. Writable, because the server builds the database here on first
+      # start when it is missing (then only queries it). Drop just the CSV in
+      # and the first boot prepares the database; no separate prep step.
       - type: bind
         source: /mnt/data/lyrics
         target: /data/lyrics
-        read_only: true
         bind:
           create_host_path: false
     read_only: true

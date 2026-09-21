@@ -15,6 +15,7 @@ type Config struct {
 	CatalogPath   string `toml:"catalog_path"`
 	BooksDir      string `toml:"books_dir"`
 	LyricsDBPath  string `toml:"lyrics_db_path"`
+	LyricsCSVPath string `toml:"lyrics_csv_path"`
 	ServerAddr    string `toml:"server_addr"`
 }
 
@@ -48,6 +49,11 @@ func Load(path string) (Config, error) {
 	// Lyrics are optional: an empty path simply runs a books-only server.
 	if c.LyricsDBPath != "" && !filepath.IsAbs(c.LyricsDBPath) {
 		c.LyricsDBPath = filepath.Join(filepath.Dir(path), c.LyricsDBPath)
+	}
+	// lyrics_csv_path is the raw corpus the server builds the database from when
+	// lyrics_db_path is missing. Optional; resolved like the other paths.
+	if c.LyricsCSVPath != "" && !filepath.IsAbs(c.LyricsCSVPath) {
+		c.LyricsCSVPath = filepath.Join(filepath.Dir(path), c.LyricsCSVPath)
 	}
 	return c, nil
 }
