@@ -16,6 +16,14 @@ services:
         read_only: true
         bind:
           create_host_path: false
+      # The prepared lyrics database, built on the host by cmd/lyricsprep.
+      # Read-only: the server only queries it. Build it before deploying.
+      - type: bind
+        source: /mnt/data/lyrics
+        target: /data/lyrics
+        read_only: true
+        bind:
+          create_host_path: false
     read_only: true
     cap_drop:
       - ALL

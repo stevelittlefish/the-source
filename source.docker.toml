@@ -1,4 +1,5 @@
 catalog_path = "/data/gutenberg/pg_catalog.csv"
 books_dir = "/data/gutenberg/cache/epub"
 year_index_path = "/var/lib/source/year-index.json"
+lyrics_db_path = "/data/lyrics/lyrics.db"
 server_addr = ":45068"

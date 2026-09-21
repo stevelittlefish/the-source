@@ -14,6 +14,7 @@ type Config struct {
 	YearIndexPath string `toml:"year_index_path"`
 	CatalogPath   string `toml:"catalog_path"`
 	BooksDir      string `toml:"books_dir"`
+	LyricsDBPath  string `toml:"lyrics_db_path"`
 	ServerAddr    string `toml:"server_addr"`
 }
 
@@ -43,6 +44,10 @@ func Load(path string) (Config, error) {
 	}
 	if !filepath.IsAbs(c.YearIndexPath) {
 		c.YearIndexPath = filepath.Join(filepath.Dir(path), c.YearIndexPath)
+	}
+	// Lyrics are optional: an empty path simply runs a books-only server.
+	if c.LyricsDBPath != "" && !filepath.IsAbs(c.LyricsDBPath) {
+		c.LyricsDBPath = filepath.Join(filepath.Dir(path), c.LyricsDBPath)
 	}
 	return c, nil
 }

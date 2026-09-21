@@ -13,6 +13,7 @@ import (
 
 	"github.com/stevelittlefish/the-source/internal/catalog"
 	"github.com/stevelittlefish/the-source/internal/config"
+	"github.com/stevelittlefish/the-source/internal/lyrics"
 	"github.com/stevelittlefish/the-source/internal/server"
 )
 
@@ -27,7 +28,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	app, err := server.New(books, c.BooksDir, c.YearIndexPath)
+	var songs *lyrics.Store
+	if c.LyricsDBPath != "" {
+		songs, err = lyrics.Open(c.LyricsDBPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer songs.Close()
+		log.Printf("lyrics corpus: %s", c.LyricsDBPath)
+	}
+	app, err := server.New(books, songs, c.BooksDir, c.YearIndexPath)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -25,7 +25,7 @@ func TestMirrorLayout(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	s, err := New(original.catalog, dir)
+	s, err := New(original.catalog, nil, dir)
 	if err != nil {
 		t.Fatal(err)
 	}

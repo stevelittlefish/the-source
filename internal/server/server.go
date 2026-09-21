@@ -13,12 +13,14 @@ import (
 	"strings"
 
 	"github.com/stevelittlefish/the-source/internal/catalog"
+	"github.com/stevelittlefish/the-source/internal/lyrics"
 )
 
 type Server struct {
 	years   map[int]int
 	pools   map[string][]catalog.Book
 	catalog *catalog.Catalog
+	songs   *lyrics.Store
 	root    *os.Root
 	mux     *http.ServeMux
 	texts   map[int]string
@@ -29,12 +31,12 @@ type bookResponse struct {
 	Available bool `json:"available"`
 }
 
-func New(c *catalog.Catalog, dir string, indexPaths ...string) (*Server, error) {
+func New(c *catalog.Catalog, songs *lyrics.Store, dir string, indexPaths ...string) (*Server, error) {
 	root, err := os.OpenRoot(dir)
 	if err != nil {
 		return nil, fmt.Errorf("open corpus: %w", err)
 	}
-	s := &Server{catalog: c, root: root, mux: http.NewServeMux(), texts: make(map[int]string)}
+	s := &Server{catalog: c, songs: songs, root: root, mux: http.NewServeMux(), texts: make(map[int]string)}
 	// Discover paths without loading book bodies; persistent header indexing follows.
 	f, err := root.Open(".")
 	if err != nil {
@@ -126,8 +128,31 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 	case "books/languages":
 		respond(w, 200, map[string]any{"languages": s.catalog.Languages()})
 		return
+	case "lyrics":
+		s.lyricsList(w, r)
+		return
+	case "lyrics/random":
+		s.lyricsRandom(w, r)
+		return
+	case "lyrics/excerpts/random":
+		s.lyricsExcerpt(w, r)
+		return
+	case "lyrics/tags":
+		s.lyricsTags(w, r)
+		return
+	case "lyrics/languages":
+		s.lyricsLanguages(w, r)
+		return
 	}
 	parts := strings.Split(path, "/")
+	if len(parts) == 2 && parts[0] == "lyrics" {
+		s.lyricsItem(w, r, parts[1], false)
+		return
+	}
+	if len(parts) == 3 && parts[0] == "lyrics" && parts[2] == "text" {
+		s.lyricsItem(w, r, parts[1], true)
+		return
+	}
 	if len(parts) < 2 || len(parts) > 3 || parts[0] != "books" || (len(parts) == 3 && parts[2] != "text") {
 		fail(w, 404, "not_found", "Unknown API endpoint.")
 		return

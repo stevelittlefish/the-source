@@ -2,5 +2,7 @@
 catalog_path = "pg_catalog.csv"
 books_dir = "testdata/books"
 year_index_path = "data/year-index.json"
+# Built from the raw CSV by cmd/lyricsprep. Optional: omit for a books-only run.
+lyrics_db_path = "testdata/lyrics.db"
 # 0xB00C: a book, as spelled by a hexadecimal enthusiast.
 server_addr = "127.0.0.1:45068"

@@ -19,7 +19,7 @@ func TestPersistentYearIndex(t *testing.T) {
 	}
 	open := func() *Server {
 		t.Helper()
-		s, err := New(original.catalog, dir, cache)
+		s, err := New(original.catalog, nil, dir, cache)
 		if err != nil {
 			t.Fatal(err)
 		}

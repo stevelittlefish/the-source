@@ -9,7 +9,37 @@ import (
 	"testing"
 
 	"github.com/stevelittlefish/the-source/internal/catalog"
+	"github.com/stevelittlefish/the-source/internal/lyrics"
 )
+
+// testSongs builds a tiny lyrics database in a temp file for the handler tests.
+func testSongs(t *testing.T) *lyrics.Store {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "lyrics.db")
+	w, err := lyrics.NewWriter(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	songs := []lyrics.Song{
+		{ID: 10, Title: "Killa Cam", Artist: "Cam'ron", Tag: "rap", Language: "en", Year: 2004, Views: 173166, Lyrics: "[Chorus]\nKilla Cam, Killa Cam\nKilla Cam, Cam\n\n[Verse 1]\nWith the goons I spar\nStay in tune with ma\n"},
+		{ID: 20, Title: "Quiet Song", Artist: "Nobody", Tag: "pop", Language: "en", Year: 1999, Views: 5, Lyrics: "One line only\n"},
+		{ID: 30, Title: "Chanson", Artist: "Personne", Tag: "pop", Language: "fr", Year: 2010, Views: 42, Lyrics: "Premiere ligne\nDeuxieme ligne\n"},
+	}
+	for _, song := range songs {
+		if err := w.Add(song); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := w.Finish(); err != nil {
+		t.Fatal(err)
+	}
+	store, err := lyrics.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { store.Close() })
+	return store
+}
 
 func testServer(t *testing.T) *Server {
 	t.Helper()
@@ -21,7 +51,7 @@ func testServer(t *testing.T) *Server {
 	if err := os.WriteFile(filepath.Join(dir, "1.txt"), []byte("A small book.\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	s, err := New(c, dir)
+	s, err := New(c, testSongs(t), dir)
 	if err != nil {
 		t.Fatal(err)
 	}
