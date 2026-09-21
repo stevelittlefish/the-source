@@ -92,7 +92,7 @@ func (s *Server) lyricsList(w http.ResponseWriter, r *http.Request) {
 	}
 	q := r.URL.Query()
 	for key, values := range q {
-		if (key != "language" && key != "tag" && key != "q" && key != "limit" && key != "cursor" && key != "views_from" && key != "views_to") || len(values) != 1 {
+		if (key != "language" && key != "tag" && key != "q" && key != "field" && key != "limit" && key != "cursor" && key != "views_from" && key != "views_to") || len(values) != 1 {
 			fail(w, 400, "invalid_query", "Unknown or repeated query parameter.")
 			return
 		}
@@ -118,6 +118,11 @@ func (s *Server) lyricsList(w http.ResponseWriter, r *http.Request) {
 		fail(w, 400, "invalid_query", "Search is limited to 256 bytes.")
 		return
 	}
+	field := strings.ToLower(strings.TrimSpace(q.Get("field")))
+	if field != "" && field != "title" && field != "artist" {
+		fail(w, 400, "invalid_query", "field must be title or artist.")
+		return
+	}
 	language, tag := lyricsQuery(q)
 	viewsFrom, viewsTo, err := parseViews(q)
 	if err != nil {
@@ -125,7 +130,7 @@ func (s *Server) lyricsList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	songs, total, err := s.songs.Search(lyrics.Filter{
-		Language: language, Tag: tag, Query: q.Get("q"),
+		Language: language, Tag: tag, Query: q.Get("q"), Field: field,
 		ViewsFrom: viewsFrom, ViewsTo: viewsTo, Limit: limit, Offset: offset,
 	})
 	if err != nil {

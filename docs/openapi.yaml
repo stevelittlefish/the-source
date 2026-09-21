@@ -653,13 +653,14 @@
       "get": {
         "operationId": "listLyrics",
         "summary": "Browse and search songs",
-        "description": "Without q, ascending id order. With q, runs SQLite FTS5 full-text search over title, artist and lyrics body (each whitespace-separated word required, as a quoted term) and orders by relevance: title matches outweigh artist matches, which outweigh body matches, with view count breaking ties. Optional language, tag and view-count (views_from/views_to) filters. Song lyrics bodies are omitted from listings. Empty results return 200. Numeric offset cursors are not snapshots.",
+        "description": "Without q, ascending id order. With q, runs SQLite FTS5 full-text search over title, artist and lyrics body (each whitespace-separated word required, as a quoted term) and orders by relevance: title matches outweigh artist matches, which outweigh body matches, with view count breaking ties. Optional field=title|artist scopes q to a single column. Optional language, tag and view-count (views_from/views_to) filters. Song lyrics bodies are omitted from listings. Empty results return 200. Numeric offset cursors are not snapshots.",
         "parameters": [
           {"$ref": "#/components/parameters/songLanguage"},
           {"$ref": "#/components/parameters/tag"},
           {"$ref": "#/components/parameters/views_from"},
           {"$ref": "#/components/parameters/views_to"},
           {"name": "q", "in": "query", "schema": {"type": "string"}, "description": "Full-text query; maximum 256 UTF-8 bytes.", "example": "concrete jungle"},
+          {"name": "field", "in": "query", "schema": {"type": "string", "enum": ["title", "artist"]}, "description": "Scope q to a single column. Omit to search title, artist and lyrics body together."},
           {"name": "limit", "in": "query", "schema": {"type": "integer", "default": 25, "minimum": 1, "maximum": 100}},
           {"name": "cursor", "in": "query", "schema": {"type": "string", "pattern": "^[0-9]+$"}, "description": "Nonnegative offset returned as next_cursor. Omit for first page."}
         ],
@@ -681,6 +682,7 @@
           {"$ref": "#/components/parameters/views_from"},
           {"$ref": "#/components/parameters/views_to"},
           {"name": "q", "in": "query", "schema": {"type": "string"}, "description": "Full-text query; maximum 256 UTF-8 bytes."},
+          {"name": "field", "in": "query", "schema": {"type": "string", "enum": ["title", "artist"]}, "description": "Scope q to a single column. Omit to search title, artist and lyrics body together."},
           {"name": "limit", "in": "query", "schema": {"type": "integer", "default": 25, "minimum": 1, "maximum": 100}},
           {"name": "cursor", "in": "query", "schema": {"type": "string", "pattern": "^[0-9]+$"}}
         ],

@@ -133,6 +133,7 @@ curl --fail-with-body 'http://lemon:45068/api/v1/lyrics/tags'
 curl --fail-with-body 'http://lemon:45068/api/v1/lyrics/languages'
 curl --fail-with-body 'http://lemon:45068/api/v1/lyrics?tag=rap&limit=25'
 curl --fail-with-body 'http://lemon:45068/api/v1/lyrics?q=concrete+jungle'
+curl --fail-with-body 'http://lemon:45068/api/v1/lyrics?q=marley&field=artist'
 curl --fail-with-body 'http://lemon:45068/api/v1/lyrics/10'
 curl --fail-with-body 'http://lemon:45068/api/v1/lyrics/10/text'
 curl --fail-with-body 'http://lemon:45068/api/v1/lyrics/random?tag=pop'
@@ -148,8 +149,10 @@ Differences from books worth noting:
   text, in one box). Every whitespace-separated word is required; maximum 256
   UTF-8 bytes. Results are ranked by relevance — a title match outweighs an
   artist match, which outweighs a body match, and the more-viewed song wins
-  ties — so the obvious hit surfaces first. Empty `q` falls back to plain
-  browsing in `id` order. Page with `next_cursor` as `cursor`. Browse also
+  ties — so the obvious hit surfaces first. To search one field only, add
+  `field=title` or `field=artist`, which scopes `q` to that column (any other
+  value is a 400); omit `field` for the combined search. Empty `q` falls back to
+  plain browsing in `id` order. Page with `next_cursor` as `cursor`. Browse also
   accepts `views_from`/`views_to` (same bounds as random) to filter by
   popularity.
 - **Lyrics bodies are omitted** from listings, item metadata, random and excerpt

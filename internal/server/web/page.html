@@ -40,6 +40,7 @@
  <h1>The Lyrics<br><em>Search</em></h1>
  <form action="/lyrics/browse" method="get">
   <label class="search">Search the lyrics<input type="search" name="q" placeholder="A line, a title or an artist" maxlength="256"></label>
+  <label>Search in<select name="field"><option value="">Everything</option><option value="title">Title</option><option value="artist">Artist</option></select></label>
   <label>Genre<select name="tag"><option value="">All genres</option></select></label>
   <label>Language<select name="language"><option value="all">All languages</option></select></label>
   {{template "views"}}<button>Find songs</button>

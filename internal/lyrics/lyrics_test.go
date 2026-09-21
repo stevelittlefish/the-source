@@ -69,6 +69,9 @@ func TestSearch(t *testing.T) {
 		{Filter{Query: "blue", Limit: 25}, 1},   // title + lyrics of one song, counted once
 		{Filter{Query: "jungle", Limit: 25}, 1}, // lyrics-body match
 		{Filter{Query: "larks", Limit: 25}, 1},  // artist match
+		{Filter{Query: "larks", Field: "artist", Limit: 25}, 1}, // scoped to the matching column
+		{Filter{Query: "larks", Field: "title", Limit: 25}, 0},   // no title carries it
+		{Filter{Query: "jungle", Field: "artist", Limit: 25}, 0}, // a body word is not an artist match
 		{Filter{Query: "nonexistent", Limit: 25}, 0},
 		{Filter{Language: "en", Query: "skies", Limit: 25}, 1},
 	} {

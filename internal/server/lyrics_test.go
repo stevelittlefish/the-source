@@ -19,6 +19,8 @@ func TestLyricsAPI(t *testing.T) {
 		{"/api/v1/lyrics?language=all", 200, `"total":3`},
 		{"/api/v1/lyrics?tag=rap", 200, `"total":1`},
 		{"/api/v1/lyrics?q=killa", 200, `"total":1`},
+		{"/api/v1/lyrics?q=killa&field=artist", 200, `"total":0`}, // not an artist name
+		{"/api/v1/lyrics?q=killa&field=bogus", 400, "invalid_query"},
 		{"/api/v1/lyrics?q=nothingmatches", 200, `"songs":[]`},
 		{"/api/v1/lyrics?views_from=100", 200, `"total":1`},
 		{"/api/v1/lyrics?language=all&views_to=50", 200, `"total":2`},

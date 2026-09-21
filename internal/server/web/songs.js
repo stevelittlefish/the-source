@@ -3,6 +3,7 @@ const params = new URLSearchParams(location.search);
 if (!params.has('limit')) params.set('limit', '30');
 const form = document.querySelector('form');
 form.elements.q.value = params.get('q') || '';
+form.elements.field.value = params.get('field') || '';
 document.querySelector('#api-link').href = '/api/v1/lyrics?' + params;
 const tag = params.get('tag') || '';
 const language = params.get('language') || 'all';
@@ -13,6 +14,7 @@ if (![...form.elements.language.options].some(option => option.value === languag
 form.elements.language.value = language;
 for (const key of ['views_from', 'views_to']) form.elements[key].value = params.get(key) || '';
 form.addEventListener('formdata', event => {
+ if (!form.elements.field.value) event.formData.delete('field');
  if (!form.elements.tag.value) event.formData.delete('tag');
  if (form.elements.language.value === 'all') event.formData.delete('language');
  for (const key of ['views_from', 'views_to']) if (!form.elements[key].value) event.formData.delete(key);

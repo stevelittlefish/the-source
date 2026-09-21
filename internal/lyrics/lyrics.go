@@ -36,9 +36,12 @@ type Store struct{ db *sql.DB }
 
 // Filter narrows a listing. An empty field means "do not filter on this".
 type Filter struct {
-	Language  string
-	Tag       string
-	Query     string
+	Language string
+	Tag      string
+	Query    string
+	// Field, when set to "title" or "artist", restricts the full-text query to
+	// that column; empty searches title, artist and lyrics together.
+	Field     string
 	ViewsFrom int
 	ViewsTo   int
 	Limit     int
@@ -116,7 +119,7 @@ func (s *Store) Text(id int) (string, bool, error) {
 // query browses; a non-empty query runs full-text search over title, artist
 // and lyrics. Results are ordered by id so paging with Offset is stable.
 func (s *Store) Search(f Filter) ([]Song, int, error) {
-	match := ftsQuery(f.Query)
+	match := ftsQuery(f.Query, f.Field)
 	var where []string
 	var args []any
 	if match != "" {
@@ -277,7 +280,12 @@ func prefixed(cols string) string {
 // ftsQuery turns free user text into a safe FTS5 MATCH expression: each word
 // becomes a quoted term (implicitly AND-ed), so punctuation cannot smuggle in
 // FTS operators or a syntax error. Empty input means "no full-text filter".
-func ftsQuery(query string) string {
+//
+// A non-empty column ("title" or "artist") scopes the whole expression to that
+// column with FTS5's "col : (...)" syntax. The caller must pass only a real
+// column name; it is placed unquoted into the MATCH string, so it is never
+// derived from user input.
+func ftsQuery(query, column string) string {
 	fields := strings.Fields(query)
 	if len(fields) == 0 {
 		return ""
@@ -286,5 +294,9 @@ func ftsQuery(query string) string {
 	for _, field := range fields {
 		quoted = append(quoted, `"`+strings.ReplaceAll(field, `"`, `""`)+`"`)
 	}
-	return strings.Join(quoted, " ")
+	expr := strings.Join(quoted, " ")
+	if column != "" {
+		expr = column + " : (" + expr + ")"
+	}
+	return expr
 }
