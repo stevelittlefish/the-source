@@ -56,8 +56,8 @@ GET /api/v1/books?language=en&q=frankenstein&limit=25&cursor=...
 GET /api/v1/books/{id}
 GET /api/v1/books/{id}/text
 GET /api/v1/books/random?language=en
-GET /api/v1/excerpts/random?paragraphs=3
-GET /api/v1/languages
+GET /api/v1/books/excerpts/random?paragraphs=3
+GET /api/v1/books/languages
 ```
 
 English is the default browse language. The service will distinguish a missing
@@ -87,7 +87,7 @@ retrieves that book regardless of language.
   can move entries between pages.
 - Browse returns `{"books":[...],"total":123,"next_cursor":"25"}`.
   Book records include `languages` and `available`; detail returns one record.
-- `GET /api/v1/languages` returns `{"languages":["en",...]}`.
+- `GET /api/v1/books/languages` returns `{"languages":["en",...]}`.
 - Errors use `{"error":{"code":"...","message":"..."}}`. Unknown IDs return
   404 `book_not_found`; absent text returns 404 `text_unavailable`.
 - Text is served as UTF-8 plain text with streaming, HEAD and byte ranges.
@@ -113,7 +113,7 @@ Both random endpoints accept inclusive original-publication year bounds:
 
 ```text
 /api/v1/books/random?year_from=1901&year_to=1950
-/api/v1/excerpts/random?paragraphs=3&year_from=1901
+/api/v1/books/excerpts/random?paragraphs=3&year_from=1901
 ```
 
 Use 1901 for “after 1900”, or 1900 for “1900 onwards”. Either bound may be
@@ -142,7 +142,7 @@ volume instead. The book mount remains read-only.
 Restart after corpus changes; remove only the index file if a forced rebuild
 is needed. Both random UI pages provide optional year controls.
 
-`GET /api/v1/excerpts/random?paragraphs=3` returns
+`GET /api/v1/books/excerpts/random?paragraphs=3` returns
 `{"book":{...},"paragraphs":["...","...","..."]}`. Paragraph count defaults to
 3 and must be 1–10. English is the default; `language=all` explicitly removes
 the filter. The UI is at `/excerpts`.

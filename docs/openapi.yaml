@@ -399,7 +399,7 @@
         }
       }
     },
-    "/api/v1/languages": {
+    "/api/v1/books/languages": {
       "get": {
         "operationId": "listLanguages",
         "summary": "List catalog languages",
@@ -536,7 +536,7 @@
         }
       }
     },
-    "/api/v1/excerpts/random": {
+    "/api/v1/books/excerpts/random": {
       "get": {
         "operationId": "randomExcerpt",
         "summary": "Get complete prose paragraphs from a random book",

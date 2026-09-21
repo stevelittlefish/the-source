@@ -114,7 +114,7 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 	}
 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/")
 	switch path {
-	case "excerpts/random":
+	case "books/excerpts/random":
 		s.excerpt(w, r)
 		return
 	case "books/random":
@@ -123,7 +123,7 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 	case "books":
 		s.list(w, r)
 		return
-	case "languages":
+	case "books/languages":
 		respond(w, 200, map[string]any{"languages": s.catalog.Languages()})
 		return
 	}

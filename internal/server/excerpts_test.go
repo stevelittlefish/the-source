@@ -68,7 +68,7 @@ func TestExcerptAPI(t *testing.T) {
 		{"?language=fr", 404, 0}, {"?language=all", 200, 3}, {"?words=100", 400, 0},
 	} {
 		w := httptest.NewRecorder()
-		s.ServeHTTP(w, httptest.NewRequest("GET", "/api/v1/excerpts/random"+tc.query, nil))
+		s.ServeHTTP(w, httptest.NewRequest("GET", "/api/v1/books/excerpts/random"+tc.query, nil))
 		if w.Code != tc.status {
 			t.Fatalf("%s: %d %s", tc.query, w.Code, w.Body.String())
 		}

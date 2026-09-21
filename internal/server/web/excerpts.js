@@ -7,11 +7,11 @@ const language = params.get('language') || 'en';
 const select = form.elements.language;
 if (![...select.options].some(option => option.value === language)) select.add(new Option(language,language));
 select.value = language;
-getJSON('/api/v1/languages').then(data => {
+getJSON('/api/v1/books/languages').then(data => {
  for (const code of data.languages) if (![...select.options].some(option => option.value === code)) select.add(new Option(code,code));
 }).catch(() => {});
 try {
- const data = await getJSON('/api/v1/excerpts/random?' + params);
+ const data = await getJSON('/api/v1/books/excerpts/random?' + params);
  document.querySelector('#source-title').textContent = data.book.title;
  document.querySelector('#source-author').textContent = data.book.authors + ' · Original publication: ' + (data.book.original_publication_year || 'unknown');
  document.querySelector('#status').textContent = data.paragraphs.length + ' complete paragraphs · ' + data.book.languages.join(', ');

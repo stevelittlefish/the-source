@@ -31,15 +31,15 @@ Run these against your chosen host:
 
 ```sh
 curl --fail-with-body 'http://lemon:45068/health'
-curl --fail-with-body 'http://lemon:45068/api/v1/languages'
+curl --fail-with-body 'http://lemon:45068/api/v1/books/languages'
 curl --fail-with-body 'http://lemon:45068/api/v1/books?language=en&q=austen&limit=25'
 curl --fail-with-body 'http://lemon:45068/api/v1/books?available=true'
 curl --fail-with-body 'http://lemon:45068/api/v1/books/1342'
 curl --fail-with-body -o pg1342.txt 'http://lemon:45068/api/v1/books/1342/text'
 curl --fail-with-body -H 'Range: bytes=0-65535' 'http://lemon:45068/api/v1/books/1342/text'
 curl --fail-with-body 'http://lemon:45068/api/v1/books/random?year_from=1901&year_to=1950'
-curl --fail-with-body 'http://lemon:45068/api/v1/excerpts/random?paragraphs=3&year_from=1901'
-curl --fail-with-body 'http://lemon:45068/api/v1/excerpts/random?paragraphs=1&language=all'
+curl --fail-with-body 'http://lemon:45068/api/v1/books/excerpts/random?paragraphs=3&year_from=1901'
+curl --fail-with-body 'http://lemon:45068/api/v1/books/excerpts/random?paragraphs=1&language=all'
 ```
 
 The local corpus contains synthetic fixtures. Results depend on the installed

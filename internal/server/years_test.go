@@ -39,7 +39,7 @@ func TestRandomYearFilters(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.buildPools()
-	for _, endpoint := range []string{"books/random", "excerpts/random"} {
+	for _, endpoint := range []string{"books/random", "books/excerpts/random"} {
 		for _, tc := range []struct {
 			q    string
 			code int
@@ -61,7 +61,7 @@ func TestRandomYearFilters(t *testing.T) {
 	}
 	s.years[1] = 0
 	s.buildPools()
-	for _, endpoint := range []string{"books/random", "excerpts/random"} {
+	for _, endpoint := range []string{"books/random", "books/excerpts/random"} {
 		for _, tc := range []struct {
 			q    string
 			code int

@@ -13,7 +13,7 @@ if (![...form.elements.language.options].some(option => option.value === languag
  form.elements.language.add(new Option(language,language));
 }
 form.elements.language.value = language;
-getJSON('/api/v1/languages').then(data => {
+getJSON('/api/v1/books/languages').then(data => {
  for (const code of data.languages) {
   if (![...form.elements.language.options].some(option => option.value === code)) {
    form.elements.language.add(new Option(code,code));

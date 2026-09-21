@@ -8,7 +8,7 @@ try {
   const language = params.get('language') || 'en';
   if (![...select.options].some(option => option.value === language)) select.add(new Option(language,language));
   select.value = language;
-  getJSON('/api/v1/languages').then(data => {
+  getJSON('/api/v1/books/languages').then(data => {
    for (const code of data.languages) if (![...select.options].some(option => option.value === code)) select.add(new Option(code,code));
   }).catch(() => {});
  }
