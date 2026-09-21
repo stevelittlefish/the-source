@@ -25,7 +25,6 @@ try {
   metadata.append(node('dt',name),node('dd',value || '—'));
  }
  const actions = document.querySelector('#actions');
- if (random) actions.append(link('Permanent book page','/books/' + book.id));
  if (book.available) {
   const read = link('Read this book →','/read/' + book.id);
   read.className = 'button';
@@ -34,7 +33,10 @@ try {
   download.download = 'pg' + book.id + '.txt';
   actions.append(read,download);
  }
- actions.append(link('View API record','/api/v1/books/' + book.id));
+ const links = node('span',undefined,'action-links');
+ if (random) links.append(link('Permanent book page','/books/' + book.id));
+ links.append(link('View API record','/api/v1/books/' + book.id));
+ actions.append(links);
 } catch(error) {
  failure(error);
  document.querySelector('#title').textContent = 'No book to show';
