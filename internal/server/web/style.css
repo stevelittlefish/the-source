@@ -109,8 +109,6 @@ button:disabled { opacity:.55; cursor:wait; }
 .book-table .col-author { color:var(--ink); min-width:160px; }
 .book-table .col-subjects { color:var(--muted); font-size:13px; max-width:280px; }
 .book-table .col-lang { font:400 12px/1.5 var(--mono); color:var(--muted); text-transform:uppercase; white-space:nowrap; }
-.book-table .col-status { white-space:nowrap; }
-.book-table .col-status .badge { margin-top:0; }
 
 article { display:flex; flex-direction:column; padding:22px; border:1px solid var(--line);
   border-radius:0; background:var(--panel); transition:border-color .15s, transform .15s; }

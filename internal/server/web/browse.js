@@ -27,7 +27,7 @@ try {
  if (data.books.length) {
   const table = node('table', undefined, 'book-table');
   const thead = node('thead'); const head = node('tr');
-  for (const h of ['#', 'Title', 'Author', 'Subjects', 'Lang', 'Text']) head.append(node('th', h));
+  for (const h of ['#', 'Title', 'Author', 'Subjects', 'Lang']) head.append(node('th', h));
   thead.append(head); table.append(thead);
   const tbody = node('tbody');
   for (const book of data.books) {
@@ -37,9 +37,6 @@ try {
    row.append(node('td', book.authors || '—', 'col-author'));
    row.append(node('td', book.subjects.slice(0,3).join(' · ') || '—', 'col-subjects'));
    row.append(node('td', book.languages.join(', '), 'col-lang'));
-   const text = node('td', undefined, 'col-status');
-   text.append(node('span', book.available ? '● Installed' : '○ Catalogue', 'badge' + (book.available ? ' installed' : '')));
-   row.append(text);
    tbody.append(row);
   }
   table.append(tbody); results.append(table);
