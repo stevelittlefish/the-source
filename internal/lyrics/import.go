@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -27,6 +28,19 @@ func Import(in, out string, includeMisc bool) error {
 		return err
 	}
 	defer f.Close()
+
+	// Make sure the destination directory exists, and steer SQLite's temporary
+	// files (the full-text index build spills gigabytes of them) into it. The
+	// production container runs on a read-only root filesystem with no /tmp, so
+	// the default temp locations are unwritable; the output directory is the one
+	// place we know is writable, since we are about to write the database there.
+	dir := filepath.Dir(out)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("create output directory: %w", err)
+	}
+	if os.Getenv("SQLITE_TMPDIR") == "" {
+		os.Setenv("SQLITE_TMPDIR", dir)
+	}
 
 	reader := csv.NewReader(f)
 	reader.ReuseRecord = true

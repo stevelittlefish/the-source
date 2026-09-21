@@ -26,6 +26,12 @@ services:
         bind:
           create_host_path: false
     read_only: true
+    # The root filesystem is read-only, so give the process a writable scratch
+    # area. The first-boot lyrics build steers SQLite's temp files onto the
+    # writable /data/lyrics mount, but this covers anything else that expects a
+    # writable /tmp under the read-only root.
+    tmpfs:
+      - /tmp
     cap_drop:
       - ALL
     security_opt:
