@@ -275,6 +275,26 @@ At startup, The Source parses it and prepares lookup and metadata-search data.
 The Lemon's `cache/epub/<id>/pg<id>.txt` layout is supported directly.
 Local tests use small text fixtures in the same layout.
 
+### Lyrics corpus
+
+The lyrics come from the **Genius Song Lyrics (with language information)**
+dataset on Kaggle by Carlos GdCJ:
+
+<https://www.kaggle.com/datasets/carlosgdcj/genius-song-lyrics-with-language-information>
+
+Download `song_lyrics.csv` from there (a Kaggle account is required). Its columns
+are `title, tag, artist, year, views, features, lyrics, id, language_cld3,
+language_ft, language` — `cmd/lyricsprep` pins that exact header, so a
+differently shaped export is rejected rather than imported into the wrong
+columns. This deployment feeds it a single-language slice named
+`song_lyrics_en.csv` (rows where `language` is `en`), but the full multilingual
+file works unchanged.
+
+Place the CSV at the configured `lyrics_csv_path`. On first start, when no
+database exists yet, the server builds the read-only SQLite corpus from it
+(see [docs/lyrics-ingest.md](docs/lyrics-ingest.md)); it is never read at request
+time. Leave `lyrics_db_path` empty to run a books-only server.
+
 ## Status
 
 Browse, metadata search, individual records, fixture text streaming, and the
