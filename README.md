@@ -1,12 +1,20 @@
 # The Source
 
-The Source is a small, API-first server that makes Project Gutenberg metadata
-and text available for browsing, fetching, and eventually asking for a random
-book when your application has run out of ideas.
+The Source is a small, API-first server over two corpora:
 
-The complete text corpus stays on **The Lemon**. Development uses a tiny,
-realistic fixture corpus; this repository is not attempting to become a
-particularly inefficient mirror of the Library of Congress.
+- **Books** — Project Gutenberg metadata and text, for browsing, fetching, and
+  asking for a random book when your application has run out of ideas.
+- **Lyrics** — a large song-lyrics collection, with the same shape of browse,
+  search, individual records, random selection and random excerpts.
+
+Both are equal features of the service, served side by side under
+`/api/v1/books` and `/api/v1/lyrics` with parallel web UIs at `/books` and
+`/lyrics`. Books are always present; lyrics are optional and switch on when a
+corpus is configured.
+
+The complete corpora stay on **The Lemon**. Development uses tiny, realistic
+fixtures; this repository is not attempting to become a particularly inefficient
+mirror of either the Library of Congress or the Billboard Hot 100.
 
 ## Principles
 
@@ -52,12 +60,21 @@ For client authors and coding agents:
 
 ```text
 GET /health
+
 GET /api/v1/books?language=en&q=frankenstein&limit=25&cursor=...
 GET /api/v1/books/{id}
 GET /api/v1/books/{id}/text
 GET /api/v1/books/random?language=en
 GET /api/v1/books/excerpts/random?paragraphs=3
 GET /api/v1/books/languages
+
+GET /api/v1/lyrics?q=concrete+jungle&tag=rap&limit=25&cursor=...
+GET /api/v1/lyrics/{id}
+GET /api/v1/lyrics/{id}/text
+GET /api/v1/lyrics/random?tag=pop
+GET /api/v1/lyrics/excerpts/random
+GET /api/v1/lyrics/tags
+GET /api/v1/lyrics/languages
 ```
 
 English is the default browse language. The service will distinguish a missing
@@ -166,6 +183,52 @@ and books without enough suitable paragraphs are skipped. A failed sample
 returns 422 `no_suitable_excerpt`; no installed language matches returns 404.
 The local Austen fixture contains synthetic prose for testing this path.
 
+## Lyrics
+
+Lyrics are a full peer of books, not a bolt-on. The collection lives under
+`/api/v1/lyrics`, backed by a prepared read-only SQLite database rather than the
+book catalogue, and mirrors the book endpoints: browse with search and
+pagination, individual records, plain-text bodies, random selection and random
+excerpts.
+
+```sh
+curl 'http://127.0.0.1:45068/api/v1/lyrics?q=concrete+jungle'
+curl 'http://127.0.0.1:45068/api/v1/lyrics?q=marley&field=artist'
+curl 'http://127.0.0.1:45068/api/v1/lyrics?tag=rap&views_from=1000&limit=25'
+curl http://127.0.0.1:45068/api/v1/lyrics/10/text
+curl 'http://127.0.0.1:45068/api/v1/lyrics/random?tag=pop'
+curl 'http://127.0.0.1:45068/api/v1/lyrics/excerpts/random'
+```
+
+Where lyrics differ from books:
+
+- **No English default.** `language` and `tag` are optional, case-insensitive
+  filters; omit them (or use `language=all`) to search everything.
+- **Full-text search.** `q` runs SQLite FTS5 over title, artist and the lyrics
+  body, so you can search by a line as well as by name, all in one box. Every
+  whitespace-separated word is required (max 256 UTF-8 bytes); results are ranked
+  by relevance, with the more-viewed song winning ties. Scope to one column with
+  `field=title` or `field=artist`; omit `field` for the combined search.
+- **Popularity filters.** Browse, random and excerpt endpoints accept
+  `views_from`/`views_to` to bound by view count.
+- **Bodies are omitted from listings.** Browse, item, random and excerpt
+  responses stay light; fetch the full body (including `[Chorus]`-style markers)
+  from `/lyrics/{id}/text`.
+- **Excerpts return a stanza:** `{"song":{...},"lines":[...]}` — a run of
+  consecutive non-blank lines. `/lyrics/tags` and `/lyrics/languages` enumerate
+  the available filter values.
+
+Song records carry `id`, `title`, `artist`, `views`, and the optional `tag`,
+`language`, `year` and `features` (featured artists). The web UI lives at
+`/lyrics` (landing), `/lyrics/browse`, `/lyrics/random` and `/lyrics/excerpts`,
+with individual songs at `/lyrics/{id}`.
+
+The corpus is optional. Leave `lyrics_db_path` empty to run a books-only server;
+the lyrics endpoints then return 404 `lyrics_unavailable`. See
+[the client guide](docs/API.md) for full details and
+[docs/lyrics-ingest.md](docs/lyrics-ingest.md) for building and deploying the
+database.
+
 ## Configuration and deployment
 
 `source.dev.toml` is the default; use `-config` for another file:
@@ -174,6 +237,9 @@ The local Austen fixture contains synthetic prose for testing this path.
 catalog_path = "pg_catalog.csv"
 books_dir = "testdata/books"
 server_addr = "127.0.0.1:45068"
+# Optional lyrics corpus; omit both for a books-only server.
+lyrics_db_path = "testdata/lyrics.db"
+lyrics_csv_path = "song_lyrics_en.csv"
 ```
 
 Paths are relative to the config file. Unknown settings and duplicate TOML keys
@@ -297,7 +363,9 @@ time. Leave `lyrics_db_path` empty to run a books-only server.
 
 ## Status
 
-Browse, metadata search, individual records, fixture text streaming, and the
-browser UI are implemented, including The Lemon's mirror layout.
-Random installed-book selection is also implemented. The books remain
-patiently unaware.
+Books: browse, metadata search, individual records, fixture text streaming, the
+browser UI, The Lemon's mirror layout, and random installed-book selection with
+excerpts. Lyrics: full-text search, browse with popularity filters, individual
+records, plain-text bodies, random selection and random stanzas, over a prepared
+SQLite corpus with its own web UI. The books remain patiently unaware; the songs
+have opinions but keep them to themselves.
