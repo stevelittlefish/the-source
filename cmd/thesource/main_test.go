@@ -208,3 +208,23 @@ func TestBadConfigExplainsItself(t *testing.T) {
 		t.Fatal("accepted a base_url without a scheme")
 	}
 }
+
+func TestGroupHelp(t *testing.T) {
+	for _, args := range [][]string{{"books"}, {"books", "help"}, {"books", "--help"}, {"help", "books"}} {
+		code, out, _ := execute(args, nil)
+		if code != exitOK || !strings.Contains(out, "thesource books search") || !strings.Contains(out, "--year-from") || strings.Contains(out, "lyrics search") {
+			t.Errorf("%q: exit %d, out %q", args, code, out)
+		}
+	}
+	code, out, _ := execute([]string{"help", "lyrics", "search"}, nil)
+	if code != exitOK || !strings.Contains(out, "--field") || strings.Contains(out, "lyrics excerpt") {
+		t.Fatalf("command topic: exit %d, out %q", code, out)
+	}
+	code, _, stderr := execute([]string{"lyrics", "frob"}, nil)
+	if code != exitUsage || !strings.Contains(stderr, `unknown command "lyrics frob"`) || !strings.Contains(stderr, "lyrics excerpt") {
+		t.Fatalf("unknown subcommand: exit %d, stderr %q", code, stderr)
+	}
+	if code, _, _ := execute([]string{"help", "nonsense"}, nil); code != exitUsage {
+		t.Fatalf("help nonsense: exit %d", code)
+	}
+}

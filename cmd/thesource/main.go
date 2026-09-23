@@ -109,9 +109,12 @@ func main() {
 
 // run is main without the process: tests hand it a fake server's URL.
 func run(args []string, stdout, stderr io.Writer, baseURL func() (string, error)) int {
-	if len(args) == 0 || isHelp(args[0]) {
+	if len(args) == 0 || (isHelp(args[0]) && len(args) == 1) {
 		fmt.Fprint(stdout, helpText())
 		return exitOK
+	}
+	if isHelp(args[0]) {
+		return topicHelp(args[1:], stdout, stderr)
 	}
 	switch args[0] {
 	case "config":
@@ -132,11 +135,52 @@ func run(args []string, stdout, stderr io.Writer, baseURL func() (string, error)
 	}
 
 	cmd, rest, ok := findCommand(args)
+	if !ok && groups[args[0]] != "" {
+		// `thesource books` or `thesource books help`: list what books can do.
+		if len(args) == 1 || isHelp(args[1]) {
+			fmt.Fprint(stdout, groupHelp(args[0]))
+			return exitOK
+		}
+		fmt.Fprintf(stderr, "thesource: unknown command %q\n\n%s", strings.Join(args[:2], " "), groupHelp(args[0]))
+		return exitUsage
+	}
 	if !ok {
 		fmt.Fprintf(stderr, "thesource: unknown command %q; run `thesource help`\n", strings.Join(args[:min(2, len(args))], " "))
 		return exitUsage
 	}
 	return runCommand(cmd, rest, baseURL, stdout, stderr)
+}
+
+// groups are the first words of two-word commands, with a line for their help.
+var groups = map[string]string{
+	"books":  "Project Gutenberg books: metadata search, full texts, random picks and excerpts",
+	"lyrics": "Song lyrics: full-text search, lyrics, random songs and stanzas",
+}
+
+// topicHelp answers `thesource help books` and `thesource help books search`.
+func topicHelp(topic []string, stdout, stderr io.Writer) int {
+	if c, rest, ok := findCommand(topic); ok && len(rest) == 0 {
+		fmt.Fprint(stdout, commandHelp(c))
+		return exitOK
+	}
+	if len(topic) == 1 && groups[topic[0]] != "" {
+		fmt.Fprint(stdout, groupHelp(topic[0]))
+		return exitOK
+	}
+	fmt.Fprintf(stderr, "thesource: no help for %q; run `thesource help`\n", strings.Join(topic, " "))
+	return exitUsage
+}
+
+func groupHelp(group string) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "thesource %s - %s\n", group, groups[group])
+	for _, c := range commands {
+		if strings.HasPrefix(c.name, group+" ") {
+			b.WriteString("\n" + commandHelp(c))
+		}
+	}
+	b.WriteString("\nRun `thesource help` for output shapes, exit codes and examples.\n")
+	return b.String()
 }
 
 func isHelp(s string) bool { return s == "help" || s == "-h" || s == "--help" || s == "-help" }
@@ -393,8 +437,9 @@ COMMANDS
       GET any API path and print the JSON (escape hatch for anything above misses)
   thesource config
       Show the config file path and server base URL
-  thesource help
-      This text. Also: thesource COMMAND --help
+  thesource help [books|lyrics|COMMAND]
+      This text, or help for one group or command. Also: thesource books,
+      thesource books help, thesource books search --help
 
 OPTIONS (passed to the API as-is; flags may come before or after words)
 `)
