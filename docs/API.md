@@ -45,6 +45,9 @@ curl --fail-with-body 'http://lemon:45068/api/v1/books/excerpts/random?paragraph
 The local corpus contains synthetic fixtures. Results depend on the installed
 corpus; these commands do not promise a particular randomly chosen book.
 
+For shell use there is also a command-line client, `thesource`, which wraps
+these endpoints (`thesource help` lists them); see the README.
+
 ## Response shapes
 
 Metadata fields: `id` (integer), `type`, `issued`, `title`, `authors`

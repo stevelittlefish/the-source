@@ -77,6 +77,26 @@ GET /api/v1/lyrics/tags
 GET /api/v1/lyrics/languages
 ```
 
+## Command-line client
+
+`cmd/thesource` is a small CLI over the same API, aimed at scripts and LLM
+agents that would rather not hand-assemble query strings. It reads
+`thesource.toml` (just `base_url = "http://lemon.com:45068/"`) from the
+directory holding the binary, following symlinks.
+
+```sh
+go build -o ~/.local/bin/thesource ./cmd/thesource
+cp cmd/thesource/thesource.toml ~/.local/bin/
+
+thesource help                      # the complete reference, in one screen
+thesource books search pride prejudice --limit 5
+thesource books text 1342 --bytes 20000
+thesource lyrics excerpt --tag rap
+```
+
+JSON goes to stdout; API errors go to stderr as their JSON and exit 1. Usage
+mistakes exit 2, and a missing config or unreachable server exits 3.
+
 English is the default browse language. The service will distinguish a missing
 catalogue record from a catalogued book whose text is not installed locally.
 
