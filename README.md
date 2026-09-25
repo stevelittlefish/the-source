@@ -30,9 +30,12 @@ mirror of either the Library of Congress or the Billboard Hot 100.
 Install Go 1.26 or newer, then:
 
 ```sh
-go run .
+./run.sh
 # Open http://127.0.0.1:45068/books
 ```
+
+`run.sh` uses a gitignored `source.local.toml` if you have one, otherwise the
+checked-in `source.dev.toml` fixtures. Extra arguments go to the server.
 
 Port **45068** is `0xB00C`: “book”, after a small hexadecimal spelling accident.
 The default configuration binds to loopback. Set `server_addr = ":45068"` on
@@ -85,6 +88,8 @@ agents that would rather not hand-assemble query strings. It reads
 directory holding the binary, following symlinks.
 
 ```sh
+./build_cli.sh    # builds bin/thesource and bin/lyricsprep, plus bin/thesource.toml
+# or install it somewhere on your PATH:
 go build -o ~/.local/bin/thesource ./cmd/thesource
 cp cmd/thesource/thesource.toml ~/.local/bin/
 

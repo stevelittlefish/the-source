@@ -6,3 +6,4 @@
 # small sampled fixture and its built database are checked in.
 /testdata/song_lyrics_en.csv
 /testdata/song_lyrics_en.csv.zst
+/bin/
