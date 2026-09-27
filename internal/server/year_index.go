@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/stevelittlefish/the-source/internal/catalog"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -91,6 +92,7 @@ func (s *Server) indexBooks(dir, path string) error {
 	s.years = make(map[int]int, len(s.texts))
 	reused, read, known := 0, 0, 0
 	lastReport := time.Now()
+	yearStart := time.Now()
 	log.Printf("book index: reading publication years for %d books (%d already known from the old index)", len(s.texts), len(previous.Entries))
 	for id, textPath := range s.texts {
 		entry := yearEntry{Path: textPath}
@@ -113,7 +115,7 @@ func (s *Server) indexBooks(dir, path string) error {
 		}
 		if len(next.Entries)%2000 == 0 || time.Since(lastReport) > 10*time.Second {
 			lastReport = time.Now()
-			log.Printf("book index: %d/%d years, %d reused, %d headers read, %s so far", len(next.Entries), len(s.texts), reused, read, time.Since(start).Round(time.Second))
+			log.Printf("book index: %d/%d years, %d reused, %d headers read; %s", len(next.Entries), len(s.texts), reused, read, progress(len(next.Entries), len(s.texts), yearStart))
 			if read > 0 {
 				// Checkpoint unfinished: a restart resumes without rereading headers.
 				if err := saveYearIndex(path, next); err != nil {
@@ -165,6 +167,25 @@ func readBookIndex(path, corpus string) (yearIndex, string) {
 	return index, ""
 }
 
+// rate describes how fast a loop is going: "1234/s after 45s".
+func rate(done int, since time.Time) string {
+	elapsed := time.Since(since)
+	perSecond := 0.0
+	if elapsed > 0 {
+		perSecond = float64(done) / elapsed.Seconds()
+	}
+	return fmt.Sprintf("%.0f/s after %s", perSecond, elapsed.Round(time.Second))
+}
+
+// progress adds a percentage and an estimate of the time left to rate.
+func progress(done, total int, since time.Time) string {
+	if total == 0 || done == 0 {
+		return rate(done, since)
+	}
+	left := time.Duration(float64(time.Since(since)) / float64(done) * float64(total-done))
+	return fmt.Sprintf("%.0f%%, %s, about %s left", 100*float64(done)/float64(total), rate(done, since), left.Round(time.Second))
+}
+
 // scanBooks lists the corpus directory and finds each book's text file. It
 // only runs while building the index.
 func (s *Server) scanBooks() error {
@@ -174,17 +195,35 @@ func (s *Server) scanBooks() error {
 	if err != nil {
 		return err
 	}
-	entries, err := f.ReadDir(-1)
-	f.Close()
-	if err != nil {
-		return err
-	}
-	log.Printf("book scan: %d entries listed in %s; checking each for a text file", len(entries), time.Since(start).Round(time.Millisecond))
+	// List in batches so a slow directory read still reports as it goes. Every
+	// progress line is logged by the loop doing the work, so a line in the log
+	// means that much really got done.
+	log.Printf("book scan: listing the book directory")
+	var entries []os.DirEntry
 	lastReport := time.Now()
+	for {
+		batch, err := f.ReadDir(1000)
+		entries = append(entries, batch...)
+		if errors.Is(err, io.EOF) || (err == nil && len(batch) == 0) {
+			break
+		}
+		if err != nil {
+			f.Close()
+			return err
+		}
+		if len(entries)%10000 == 0 || time.Since(lastReport) > 10*time.Second {
+			lastReport = time.Now()
+			log.Printf("book scan: %d entries listed so far, %s", len(entries), rate(len(entries), start))
+		}
+	}
+	f.Close()
+	log.Printf("book scan: %d entries listed in %s; checking each for a text file", len(entries), time.Since(start).Round(time.Millisecond))
+	checkStart := time.Now()
+	lastReport = time.Now()
 	for i, entry := range entries {
 		if i > 0 && (i%5000 == 0 || time.Since(lastReport) > 10*time.Second) {
 			lastReport = time.Now()
-			log.Printf("book scan: %d/%d entries checked, %d texts found, %s so far", i, len(entries), len(s.texts), time.Since(start).Round(time.Second))
+			log.Printf("book scan: %d/%d entries checked, %d texts found; %s", i, len(entries), len(s.texts), progress(i, len(entries), checkStart))
 		}
 		name := entry.Name()
 		number := strings.TrimSuffix(name, ".txt")
