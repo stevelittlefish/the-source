@@ -7,11 +7,11 @@
  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
  <link rel="stylesheet" href="/static/fonts.css">
  <link rel="stylesheet" href="/static/style.css">
- {{if eq .Kind "random"}}<script src="/static/book.js" type="module"></script>{{else if or (eq .Kind "song") (eq .Kind "songrandom")}}<script src="/static/song.js" type="module"></script>{{else if or (eq .Kind "browse") (eq .Kind "excerpts") (eq .Kind "book") (eq .Kind "read") (eq .Kind "songs") (eq .Kind "stanza")}}<script src="/static/{{.Kind}}.js" type="module"></script>{{end}}
+ {{if eq .Kind "random"}}<script src="/static/book.js" type="module"></script>{{else if or (eq .Kind "song") (eq .Kind "songrandom")}}<script src="/static/song.js" type="module"></script>{{else if or (eq .Kind "browse") (eq .Kind "excerpts") (eq .Kind "book") (eq .Kind "read") (eq .Kind "songs") (eq .Kind "stanza") (eq .Kind "markov")}}<script src="/static/{{.Kind}}.js" type="module"></script>{{end}}
 </head>
 <body data-id="{{.ID}}">
  <a class="skip" href="#main">Skip to content</a>
- <header><a class="brand" href="/">The Source</a><nav aria-label="Main"><a href="/books">Books</a><a href="/lyrics">Lyrics</a><a href="/docs">API docs ↗</a></nav></header>
+ <header><a class="brand" href="/">The Source</a><nav aria-label="Main"><a href="/books">Books</a><a href="/lyrics">Lyrics</a><a href="/markov">Markov</a><a href="/docs">API docs ↗</a></nav></header>
  <main id="main">
  {{if eq .Kind "index"}}
  <h1>The Source</h1>
@@ -19,6 +19,7 @@
  <section class="home-grid" aria-label="Explore The Source">
  <article><p class="eyebrow">LIBRARY</p><h2><a href="/books">Books →</a></h2><p>Browse the catalogue, pick a book at random, or borrow an excerpt.</p></article>
  <article><p class="eyebrow">LYRICS</p><h2><a href="/lyrics">Lyrics →</a></h2><p>Search millions of songs, pick one at random, or borrow a stanza.</p></article>
+ <article><p class="eyebrow">MARKOV</p><h2><a href="/markov">Markov chains →</a></h2><p>Brand-new song titles and verses, stitched from millions of real ones.</p></article>
  <article><p class="eyebrow">API</p><h2><a href="/docs">Interactive API docs →</a></h2><p>Explore endpoints and try live requests.</p><a href="/api-guide.md">Plain-text client guide</a></article>
  <article><p class="eyebrow">SPECIFICATION</p><h2><a href="/openapi.yaml">OpenAPI specification →</a></h2><p>The structured API reference for your tools.</p></article>
  </section>
@@ -62,6 +63,19 @@
  <p id="source-links" class="actions"></p>
  <details><summary>Inspect API response</summary><pre id="json"></pre></details>
  <noscript>This interface needs JavaScript to load the API. You can also <a href="/api/v1/lyrics/excerpts/random">fetch a stanza from the JSON API</a>.</noscript>
+ {{else if eq .Kind "markov"}}
+ <h1>Markov Chains<br><em>New Words, Old Habits</em></h1>
+ <p class="intro">Titles and verses generated from word pairs in real songs. No line of four or more words is copied from a real verse, and no title is a real title.</p>
+ <form action="/markov" method="get">
+  <label>Chain<select name="chain" required></select></label>
+  <label>How many<input name="count" type="number" min="1" max="100" value="5" required></label>
+  <label>Seed<input name="seed" type="number" min="0" placeholder="Random"></label>
+  <button>Generate ↻</button>
+ </form>
+ <div class="result-bar"><p id="status" role="status">Loading…</p><a id="api-link" href="/api/v1/markov">Inspect this query ↗</a></div>
+ <section id="results" aria-label="Generated results"></section>
+ <details><summary>Inspect API response</summary><pre id="json"></pre></details>
+ <noscript>This interface needs JavaScript to load the API. You can also <a href="/api/v1/markov">list the chains from the JSON API</a>.</noscript>
  {{else if or (eq .Kind "song") (eq .Kind "songrandom")}}
  <a href="/lyrics/browse">← Browse the lyrics</a>
  {{if eq .Kind "songrandom"}}<form action="/lyrics/random" method="get"><label>Genre<select name="tag"><option value="">All genres</option></select></label><label>Language<select name="language"><option value="all">All languages</option></select></label>{{template "views"}}<button>Pick another song ↻</button></form>{{end}}

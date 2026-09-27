@@ -228,3 +228,21 @@ func TestGroupHelp(t *testing.T) {
 		t.Fatalf("help nonsense: exit %d", code)
 	}
 }
+
+func TestMarkovGenerateBuildsPathAndBatch(t *testing.T) {
+	seen, base := fakeAPI(t, jsonOK(`{"chain":"pop-titles","kind":"title","results":[]}`))
+	code, _, stderr := execute([]string{"markov", "generate", "pop-titles", "--count", "10", "--seed", "42"}, base)
+	if code != exitOK {
+		t.Fatalf("exit %d: %s", code, stderr)
+	}
+	r := (*seen)[0]
+	if r.URL.Path != "/api/v1/markov/pop-titles" || r.URL.Query().Get("count") != "10" || r.URL.Query().Get("seed") != "42" {
+		t.Fatalf("request %s?%s", r.URL.Path, r.URL.RawQuery)
+	}
+	if code, _, _ := execute([]string{"markov", "generate"}, base); code != exitUsage {
+		t.Fatalf("missing name: exit %d", code)
+	}
+	if code, _, _ := execute([]string{"markov", "list"}, base); code != exitOK || (*seen)[len(*seen)-1].URL.Path != "/api/v1/markov" {
+		t.Fatal("markov list did not call /api/v1/markov")
+	}
+}

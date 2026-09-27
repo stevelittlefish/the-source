@@ -16,6 +16,7 @@ type Config struct {
 	BooksDir      string `toml:"books_dir"`
 	LyricsDBPath  string `toml:"lyrics_db_path"`
 	LyricsCSVPath string `toml:"lyrics_csv_path"`
+	MarkovDir     string `toml:"markov_dir"`
 	ServerAddr    string `toml:"server_addr"`
 }
 
@@ -54,6 +55,11 @@ func Load(path string) (Config, error) {
 	// lyrics_db_path is missing. Optional; resolved like the other paths.
 	if c.LyricsCSVPath != "" && !filepath.IsAbs(c.LyricsCSVPath) {
 		c.LyricsCSVPath = filepath.Join(filepath.Dir(path), c.LyricsCSVPath)
+	}
+	// markov_dir holds the SongInspirationEngine's chain models, one
+	// NAME.json.gz each. Optional, like lyrics: empty means no chains.
+	if c.MarkovDir != "" && !filepath.IsAbs(c.MarkovDir) {
+		c.MarkovDir = filepath.Join(filepath.Dir(path), c.MarkovDir)
 	}
 	return c, nil
 }

@@ -1,5 +1,6 @@
 // Command thesource is a small command-line client for The Source API, built so
-// that scripts and LLM agents can ask for books and lyrics without composing
+// that scripts and LLM agents can ask for books, lyrics and Markov-chain
+// song titles and verses without composing
 // URLs by hand. It reads the server address from thesource.toml in the same
 // directory as the binary:
 //
@@ -58,13 +59,15 @@ var options = map[string]option{
 	"views_from": {"views_from", "minimum Genius view count"},
 	"views_to":   {"views_to", "maximum Genius view count"},
 	"field":      {"field", "restrict the search to title or artist (default: title, artist and lyrics)"},
+	"count":      {"count", "results in the batch, 1-100 (default 1)"},
+	"seed":       {"seed", "repeatable batch: same chain, seed and count, same results"},
 }
 
 type command struct {
 	name    string   // "books search"
 	args    string   // positional arguments, for help
 	summary string   // one line
-	path    string   // API path; {id} is replaced by the first positional
+	path    string   // API path; {id} or {name} is replaced by the first positional
 	params  []string // keys into options
 	words   bool     // positional words become q
 	text    bool     // plain-text body, streamed
@@ -99,6 +102,10 @@ var commands = []command{
 		path: "/api/v1/lyrics/tags"},
 	{name: "lyrics languages", summary: "Every song language",
 		path: "/api/v1/lyrics/languages"},
+	{name: "markov list", summary: "Every Markov chain on the server, with its kind (title or verse)",
+		path: "/api/v1/markov"},
+	{name: "markov generate", args: "NAME", summary: "Invent song titles or verses from a Markov chain (see: markov list)",
+		path: "/api/v1/markov/{name}", params: []string{"count", "seed"}},
 	{name: "health", summary: "Check the server is up",
 		path: "/health"},
 }
@@ -155,6 +162,7 @@ func run(args []string, stdout, stderr io.Writer, baseURL func() (string, error)
 var groups = map[string]string{
 	"books":  "Project Gutenberg books: metadata search, full texts, random picks and excerpts",
 	"lyrics": "Song lyrics: full-text search, lyrics, random songs and stanzas",
+	"markov": "Markov chains: brand-new song titles and verses, in batches",
 }
 
 // topicHelp answers `thesource help books` and `thesource help books search`.
@@ -235,6 +243,12 @@ func runCommand(c command, args []string, baseURL func() (string, error), stdout
 			return exitUsage
 		}
 		path = strings.Replace(path, "{id}", positional[0], 1)
+	case strings.Contains(path, "{name}"):
+		if len(positional) != 1 || strings.TrimSpace(positional[0]) == "" {
+			fmt.Fprintf(stderr, "usage: thesource %s %s\n", c.name, c.args)
+			return exitUsage
+		}
+		path = strings.Replace(path, "{name}", url.PathEscape(positional[0]), 1)
 	case c.words:
 		if words := strings.Join(positional, " "); strings.TrimSpace(words) != "" {
 			q.Set("q", words)
@@ -426,7 +440,7 @@ func commandHelp(c command) string {
 
 func helpText() string {
 	var b strings.Builder
-	b.WriteString(`thesource - command-line client for The Source (Project Gutenberg books and song lyrics)
+	b.WriteString(`thesource - command-line client for The Source (Project Gutenberg books, song lyrics and Markov chains)
 
 COMMANDS
 `)
@@ -437,13 +451,13 @@ COMMANDS
       GET any API path and print the JSON (escape hatch for anything above misses)
   thesource config
       Show the config file path and server base URL
-  thesource help [books|lyrics|COMMAND]
+  thesource help [books|lyrics|markov|COMMAND]
       This text, or help for one group or command. Also: thesource books,
       thesource books help, thesource books search --help
 
 OPTIONS (passed to the API as-is; flags may come before or after words)
 `)
-	keys := []string{"language", "available", "limit", "cursor", "year_from", "year_to", "paragraphs", "tag", "views_from", "views_to", "field"}
+	keys := []string{"language", "available", "limit", "cursor", "year_from", "year_to", "paragraphs", "tag", "views_from", "views_to", "field", "count", "seed"}
 	for _, key := range keys {
 		o := options[key]
 		fmt.Fprintf(&b, "  --%-11s %s\n", o.flag(), o.usage)
@@ -460,13 +474,16 @@ OUTPUT
   Songs:    {"id","title","artist","views","tag"?,"language"?,"year"?,"features"?}
   Lyrics excerpt: {"song":{...},"lines":["...", ...]}
   Song listings omit lyrics; use "lyrics text ID" for the words.
+  Markov list:     {"chains":[{"name","kind":"title"|"verse","trained_on":N}, ...]}
+  Markov generate: {"chain","kind","seed"?,"results":[{"text":"...","lines":["...", ...]}, ...]}
 
 EXIT STATUS
   0 ok
   1 API error; stderr is {"error":{"code":"...","message":"..."}}. Branch on code:
     invalid_query (fix flags), book_not_found, song_not_found, text_unavailable,
     no_matching_books, no_matching_songs (broaden filters), no_suitable_excerpt,
-    lyrics_unavailable (server has no lyrics)
+    lyrics_unavailable (server has no lyrics), chain_not_found (see markov list),
+    no_result (chain found nothing original; retry or change --seed)
   2 bad command-line usage
   3 config missing/invalid or server unreachable
 
@@ -476,6 +493,8 @@ NOTES
   - Books default to English; --language all removes that. Lyrics have no default.
   - Book texts can be megabytes. Start with --bytes 20000, then --offset to read on.
   - Random and excerpt commands pick afresh each call; repeats happen.
+  - Markov titles are never real titles; verse lines of 4+ words are never real
+    lines. Ask for a batch with --count rather than calling in a loop.
   - Publication years come from the text header; books without one are excluded
     whenever --year-from or --year-to is set.
 
@@ -490,6 +509,9 @@ EXAMPLES
   thesource lyrics search marley --field artist --limit 5
   thesource lyrics text 10
   thesource lyrics excerpt --tag rap
+  thesource markov list
+  thesource markov generate pop-titles --count 10
+  thesource markov generate rock-verses --count 3 --seed 42
   thesource raw '/api/v1/lyrics/random?views_from=1000000'
 
 CONFIG

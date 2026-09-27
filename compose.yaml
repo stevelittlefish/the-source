@@ -8,3 +8,4 @@ services:
       - /srv/the-source:/var/lib/source
       - /mnt/data/gutenberg:/data/gutenberg
       - /mnt/data/lyrics:/data/lyrics
+      - /mnt/data/markov:/data/markov:ro

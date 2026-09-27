@@ -10,12 +10,14 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime/debug"
 	"syscall"
 	"time"
 
 	"github.com/stevelittlefish/the-source/internal/catalog"
 	"github.com/stevelittlefish/the-source/internal/config"
 	"github.com/stevelittlefish/the-source/internal/lyrics"
+	"github.com/stevelittlefish/the-source/internal/markov"
 	"github.com/stevelittlefish/the-source/internal/server"
 )
 
@@ -92,6 +94,23 @@ func main() {
 		log.Fatal(err)
 	}
 	defer app.Close()
+	if c.MarkovDir != "" {
+		// Every chain lives in memory for the life of the process: a few
+		// seconds and a few hundred MB, in exchange for millisecond batches.
+		started := time.Now()
+		chains, err := markov.LoadDir(c.MarkovDir)
+		if err != nil {
+			log.Fatal(err)
+		}
+		for _, chain := range chains {
+			log.Printf("markov chain %s: %s model trained on %d", chain.Name, chain.Kind, chain.Trained)
+		}
+		log.Printf("loaded %d markov chains from %s in %s", len(chains), c.MarkovDir, time.Since(started).Round(time.Millisecond))
+		app.SetChains(chains)
+		// Decoding the models leaves a heap full of spent JSON tokens; hand it
+		// back now rather than wearing it for the life of the process.
+		debug.FreeOSMemory()
+	}
 	srv := &http.Server{Addr: c.ServerAddr, Handler: app, ReadHeaderTimeout: 5 * time.Second, IdleTimeout: 60 * time.Second}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

@@ -15,7 +15,7 @@ func TestIndexLinks(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("index status: %d", w.Code)
 	}
-	for _, path := range []string{"/books", "/lyrics", "/docs", "/openapi.yaml", "/api-guide.md"} {
+	for _, path := range []string{"/books", "/lyrics", "/markov", "/docs", "/openapi.yaml", "/api-guide.md"} {
 		if !strings.Contains(w.Body.String(), `href="`+path+`"`) {
 			t.Errorf("missing link: %s", path)
 		}
@@ -79,5 +79,14 @@ func TestServedDocsMatchSource(t *testing.T) {
 		if w.Code != 200 || w.Body.Len() != 0 {
 			t.Fatalf("incorrect HEAD at %s", tc.path)
 		}
+	}
+}
+
+func TestMarkovPageLoadsItsScript(t *testing.T) {
+	s := testServer(t)
+	w := httptest.NewRecorder()
+	s.ServeHTTP(w, httptest.NewRequest("GET", "/markov", nil))
+	if w.Code != 200 || !strings.Contains(w.Body.String(), `/static/markov.js`) || !strings.Contains(w.Body.String(), `href="/api/v1/markov"`) {
+		t.Fatalf("markov page: %d", w.Code)
 	}
 }

@@ -4,5 +4,7 @@ books_dir = "testdata/books"
 year_index_path = "data/year-index.json"
 # Built from the raw CSV by cmd/lyricsprep. Optional: omit for a books-only run.
 lyrics_db_path = "testdata/lyrics.db"
+# Two tiny chains trained on a slice of the real thing. The Lemon has the big ones.
+markov_dir = "testdata/markov"
 # 0xB00C: a book, as spelled by a hexadecimal enthusiast.
 server_addr = "127.0.0.1:45068"

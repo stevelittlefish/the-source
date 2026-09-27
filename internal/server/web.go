@@ -47,6 +47,9 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /lyrics/random", func(w http.ResponseWriter, r *http.Request) { s.page(w, "songrandom", "Random song", 0) })
 	s.mux.HandleFunc("GET /lyrics/excerpts", func(w http.ResponseWriter, r *http.Request) { s.page(w, "stanza", "Random stanza", 0) })
 	s.mux.HandleFunc("GET /lyrics/{id}", func(w http.ResponseWriter, r *http.Request) { s.songPage(w, r) })
+	// Markov section: one page, because a chain only does one thing.
+	s.mux.HandleFunc("GET /markov", func(w http.ResponseWriter, r *http.Request) { s.page(w, "markov", "Markov chains", 0) })
+	s.mux.HandleFunc("GET /markov/{$}", func(w http.ResponseWriter, r *http.Request) { s.page(w, "markov", "Markov chains", 0) })
 }
 func (s *Server) songPage(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))

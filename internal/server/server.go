@@ -14,6 +14,7 @@ import (
 
 	"github.com/stevelittlefish/the-source/internal/catalog"
 	"github.com/stevelittlefish/the-source/internal/lyrics"
+	"github.com/stevelittlefish/the-source/internal/markov"
 )
 
 type Server struct {
@@ -24,6 +25,7 @@ type Server struct {
 	root    *os.Root
 	mux     *http.ServeMux
 	texts   map[int]string
+	chains  []*markov.Chain // in name order; nil when no markov_dir is configured
 }
 
 type bookResponse struct {
@@ -143,8 +145,15 @@ func (s *Server) api(w http.ResponseWriter, r *http.Request) {
 	case "lyrics/languages":
 		s.lyricsLanguages(w, r)
 		return
+	case "markov":
+		s.markovList(w, r)
+		return
 	}
 	parts := strings.Split(path, "/")
+	if len(parts) == 2 && parts[0] == "markov" {
+		s.markovGenerate(w, r, parts[1])
+		return
+	}
 	if len(parts) == 2 && parts[0] == "lyrics" {
 		s.lyricsItem(w, r, parts[1], false)
 		return

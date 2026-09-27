@@ -3,7 +3,7 @@
   "info": {
     "title": "The Source API",
     "version": "1.0.0",
-    "description": "Read-only Project Gutenberg catalog, installed text, and random prose. English is the default for selection endpoints. GET and HEAD only. No authentication. Query parameters must be supplied once. Browse and random endpoints reject unknown query parameters. Random responses use Cache-Control: no-store. HTML UI routes are not API endpoints. This document uses JSON syntax, which is valid YAML 1.2."
+    "description": "Read-only Project Gutenberg catalog, installed text, and random prose; song lyrics; and Markov chains that invent new song titles and verses. English is the default for selection endpoints. GET and HEAD only. No authentication. Query parameters must be supplied once. Browse and random endpoints reject unknown query parameters. Random responses use Cache-Control: no-store. HTML UI routes are not API endpoints. This document uses JSON syntax, which is valid YAML 1.2."
   },
   "servers": [
     {
@@ -876,6 +876,212 @@
           "500": {"description": "500 lyrics_error: the lyrics database could not be queried."}
         }
       }
+    },
+    "/api/v1/markov": {
+      "get": {
+        "operationId": "listMarkovChains",
+        "summary": "List the Markov chains",
+        "description": "Every chain loaded from markov_dir, in name order. Chains are word-pair Markov models trained by the SongInspirationEngine on song titles and verses. An empty list means none are installed.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Installed chains.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkovChains"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400 invalid_query: this endpoint takes no query parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "$ref": "#/components/responses/Method"
+          }
+        }
+      },
+      "head": {
+        "operationId": "listMarkovChainsHead",
+        "summary": "List the Markov chains (headers only)",
+        "description": "Same as GET; no response body.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Installed chains."
+          },
+          "400": {
+            "description": "400 invalid_query."
+          },
+          "405": {
+            "description": "405 method_not_allowed. Allow: GET, HEAD."
+          }
+        }
+      }
+    },
+    "/api/v1/markov/{name}": {
+      "get": {
+        "operationId": "generateMarkov",
+        "summary": "Generate titles or verses from a Markov chain",
+        "description": "Generates count results (default 1, at most 100) from one chain. Title chains return one line per result, 2-12 words, never an exact training title. Verse chains return 4-8 lines per result, and no line of four or more words appears in a real training verse. Use seed for a repeatable batch.",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Chain name from GET /api/v1/markov, such as pop-titles or rock-verses.",
+            "example": "pop-verses"
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "How many results to generate in this batch."
+          },
+          {
+            "name": "seed",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 18446744073709551615
+            },
+            "description": "Makes the batch repeatable: the same chain, seed and count always give the same results. Omit for a fresh random batch."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A batch of generated results.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkovBatch"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400 invalid_query: count outside 1-100, a bad seed, or an unknown or repeated parameter.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404 chain_not_found: no chain has this name.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "$ref": "#/components/responses/Method"
+          },
+          "503": {
+            "description": "503 no_result: the chain found no original result within its attempt budget. Rare with real models; retry or change the seed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "operationId": "generateMarkovHead",
+        "summary": "Generate from a Markov chain (headers only)",
+        "description": "Same validation as GET; no response body.",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Chain name from GET /api/v1/markov, such as pop-titles or rock-verses.",
+            "example": "pop-verses"
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "How many results to generate in this batch."
+          },
+          {
+            "name": "seed",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 18446744073709551615
+            },
+            "description": "Makes the batch repeatable: the same chain, seed and count always give the same results. Omit for a fresh random batch."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A batch was generated.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400 invalid_query."
+          },
+          "404": {
+            "description": "404 chain_not_found."
+          },
+          "405": {
+            "description": "405 method_not_allowed. Allow: GET, HEAD."
+          },
+          "503": {
+            "description": "503 no_result."
+          }
+        }
+      }
     }
   },
   "components": {
@@ -970,6 +1176,97 @@
       }
     },
     "schemas": {
+      "MarkovChain": {
+        "type": "object",
+        "required": [
+          "name",
+          "kind",
+          "trained_on"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Chain name, from its model file name.",
+            "example": "pop-verses"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "title",
+              "verse"
+            ]
+          },
+          "trained_on": {
+            "type": "integer",
+            "description": "Titles or verses in the training set.",
+            "example": 172420
+          }
+        }
+      },
+      "MarkovChains": {
+        "type": "object",
+        "required": [
+          "chains"
+        ],
+        "properties": {
+          "chains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarkovChain"
+            }
+          }
+        }
+      },
+      "MarkovResult": {
+        "type": "object",
+        "required": [
+          "text",
+          "lines"
+        ],
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The whole result; verse lines are joined with newlines."
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "One line for a title, 4-8 for a verse."
+          }
+        }
+      },
+      "MarkovBatch": {
+        "type": "object",
+        "required": [
+          "chain",
+          "kind",
+          "results"
+        ],
+        "properties": {
+          "chain": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "title",
+              "verse"
+            ]
+          },
+          "seed": {
+            "type": "integer",
+            "description": "Echoed only when the request supplied one."
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarkovResult"
+            }
+          }
+        }
+      },
       "Book": {
         "type": "object",
         "required": [

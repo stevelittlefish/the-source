@@ -178,6 +178,32 @@ Song objects carry `id`, `title`, `artist`, `views`, and the optional
 (featured artists). The corpus is built offline by `cmd/lyricsprep` from the
 source CSV; see the working notes for how to rebuild it.
 
+## Markov chains
+
+The server can hold word-pair Markov chains that invent song titles and
+verses. They are trained by the SongInspirationEngine on real Genius titles
+and verses and loaded into memory at startup from `markov_dir`, one
+`NAME.json.gz` per chain. Without `markov_dir` the list is simply empty.
+
+```sh
+curl -s localhost:45068/api/v1/markov
+curl -s 'localhost:45068/api/v1/markov/pop-titles?count=10'
+curl -s 'localhost:45068/api/v1/markov/rock-verses?count=3&seed=42'
+```
+
+- **List:** `{"chains":[{"name":"pop-verses","kind":"verse","trained_on":172420}, ...]}`,
+  sorted by name. `kind` is `title` or `verse`.
+- **Generate:** `GET /api/v1/markov/{name}` returns
+  `{"chain":"pop-verses","kind":"verse","results":[{"text":"...","lines":[...]}]}`.
+  `count` asks for a batch of 1-100 results (default 1). `seed` makes the
+  batch repeatable and is echoed back; without it every call is fresh.
+- **Titles** are one line of 2-12 words, never an exact training title.
+- **Verses** are 4-8 lines. No line of four or more words is copied from a
+  real training verse; shorter stock phrases ("oh baby") are allowed. `text`
+  is the lines joined with newlines.
+- Results are made in milliseconds, so ask for the whole batch at once rather
+  than looping over single requests.
+
 ## Errors
 
 Application errors use:
@@ -200,6 +226,8 @@ Application errors use:
 | 404 | no_matching_songs | Broaden the language/tag filters. |
 | 404 | lyrics_unavailable | No lyrics corpus is installed on this server. |
 | 500 | lyrics_error | Server could not query the lyrics database; inspect logs. |
+| 404 | chain_not_found | Check the name against `GET /api/v1/markov`. |
+| 503 | no_result | The chain found nothing original in time; retry or change seed. |
 
 The text endpoint additionally uses ordinary HTTP semantics: 206 for ranges,
 304 for unchanged content, 412 for failed preconditions, and **plain-text
@@ -211,5 +239,5 @@ decoding JSON. HEAD never has a body. Multi-range responses may be multipart.
 Treat `docs/openapi.yaml` as the API contract. This guide explains operational
 details. When changing endpoints, update both documents and API tests in the
 same commit. HTML routes (`/books`, `/books/browse`, `/books/random`,
-`/books/excerpts`, `/read/{id}`, `/lyrics`) are human interfaces; clients
+`/books/excerpts`, `/read/{id}`, `/lyrics`, `/markov`) are human interfaces; clients
 should use `/api/v1/...`.

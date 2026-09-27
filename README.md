@@ -6,6 +6,9 @@ The Source is a small, API-first server over two corpora:
   asking for a random book when your application has run out of ideas.
 - **Lyrics** — a large song-lyrics collection, with the same shape of browse,
   search, individual records, random selection and random excerpts.
+- **Markov chains** — word-pair models trained on those lyrics by the
+  SongInspirationEngine, generating new song titles and verses on demand, in
+  batches of up to 100. Optional: they load from `markov_dir` at startup.
 
 Both are equal features of the service, served side by side under
 `/api/v1/books` and `/api/v1/lyrics` with parallel web UIs at `/books` and
@@ -78,6 +81,9 @@ GET /api/v1/lyrics/random?tag=pop
 GET /api/v1/lyrics/excerpts/random
 GET /api/v1/lyrics/tags
 GET /api/v1/lyrics/languages
+
+GET /api/v1/markov
+GET /api/v1/markov/{name}?count=10&seed=42
 ```
 
 ## Command-line client
@@ -265,6 +271,8 @@ server_addr = "127.0.0.1:45068"
 # Optional lyrics corpus; omit both for a books-only server.
 lyrics_db_path = "testdata/lyrics.db"
 lyrics_csv_path = "song_lyrics_en.csv"
+# Optional Markov chains: every NAME.json.gz in here becomes chain NAME.
+markov_dir = "testdata/markov"
 ```
 
 Paths are relative to the config file. Unknown settings and duplicate TOML keys
@@ -318,6 +326,21 @@ The committed Compose file works on The Lemon without edits. It mounts
 One mount supplies both metadata and books. The adjacent `txt-files.tar.zip`
 is ignored; the service reads the extracted files. Neither books nor metadata
 are baked into the image.
+
+It also mounts `/mnt/data/markov` read-only at `/data/markov`. Copy the
+SongInspirationEngine's chain models there, named after the chain you want:
+
+```sh
+# from a SongInspirationEngine checkout; scp them if that isn't on The Lemon
+cp assets/title-markov/pop-titles.json.gz assets/title-markov/rock-titles.json.gz \
+   assets/verse-markov/pop-verses.json.gz assets/verse-markov/rock-verses.json.gz \
+   /mnt/data/markov/
+docker compose restart source
+```
+
+All four load into memory at startup: a few seconds and about 300 MB. The
+server logs each chain it loads. An empty directory means no chains, not an
+error.
 
 For development, explicitly enable the fixture override:
 
