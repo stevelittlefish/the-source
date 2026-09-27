@@ -35,7 +35,7 @@ func TestRandomYearFilters(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.prepareYears(s.root.Name(), ""); err != nil {
+	if err := s.indexBooks(s.root.Name(), ""); err != nil {
 		t.Fatal(err)
 	}
 	s.buildPools()

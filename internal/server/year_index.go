@@ -2,25 +2,36 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/stevelittlefish/the-source/internal/catalog"
 	"log"
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 )
 
+// bookIndexVersion 2 added Complete. Version 1 files were checkpointed
+// mid-build under the same name, so none of them can prove they finished.
+const bookIndexVersion = 2
+
+// yearEntry is one installed book: where its text lives and its original
+// publication year (0 when the header doesn't say). Size and Modified are
+// only read from version 1 files; nothing checks them any more.
 type yearEntry struct {
 	Path     string
-	Size     int64
-	Modified int64
+	Size     int64 `json:",omitempty"`
+	Modified int64 `json:",omitempty"`
 	Year     int
 }
 type yearIndex struct {
-	Version int
-	Corpus  string
-	Entries map[int]yearEntry
+	Version  int
+	Corpus   string
+	Complete bool
+	Entries  map[int]yearEntry
 }
 
 func saveYearIndex(path string, index yearIndex) error {
@@ -48,47 +59,43 @@ func saveYearIndex(path string, index yearIndex) error {
 	return os.Rename(f.Name(), path)
 }
 
-func (s *Server) prepareYears(dir, path string) error {
+// indexBooks fills s.texts and s.years. The Gutenberg mirror never changes,
+// so a finished index at path is trusted outright: no directory listing, no
+// stat, no header. Only a missing, unreadable, unfinished or foreign index
+// starts the one-time build, which scans every book and says so. Delete the
+// index file to force a rebuild. With no path (tests), it always scans.
+func (s *Server) indexBooks(dir, path string) error {
 	start := time.Now()
 	corpus, err := filepath.Abs(dir)
 	if err != nil {
 		return err
 	}
-	previous := yearIndex{}
-	if path != "" {
-		f, err := os.Open(path)
-		if err == nil {
-			err = json.NewDecoder(f).Decode(&previous)
-			f.Close()
-			if err != nil {
-				log.Printf("year index unreadable; rebuilding: %v", err)
-				previous = yearIndex{}
-			}
-		} else if !os.IsNotExist(err) {
-			return fmt.Errorf("read year index: %w", err)
+	previous, reason := readBookIndex(path, corpus)
+	if reason == "" {
+		s.texts = make(map[int]string, len(previous.Entries))
+		s.years = make(map[int]int, len(previous.Entries))
+		for id, entry := range previous.Entries {
+			s.texts[id] = entry.Path
+			s.years[id] = entry.Year
 		}
+		log.Printf("book index: loaded %d installed books from %s in %s; trusting it, no scan (delete the file to force a rebuild)",
+			len(s.texts), path, time.Since(start).Round(time.Millisecond))
+		return nil
 	}
-	if previous.Version != 1 || previous.Corpus != corpus {
-		if len(previous.Entries) > 0 {
-			log.Printf("year index: cache is for another corpus or version; every header will be read again")
-		}
-		previous = yearIndex{}
+	log.Printf("book index: %s", reason)
+	log.Printf("book index: BUILDING IT ONCE. Every book in %s is checked and its header read; on a cold disk this takes minutes. Later starts load the finished index and skip all of this.", dir)
+	if err := s.scanBooks(); err != nil {
+		return err
 	}
-	log.Printf("year index: cache has %d entries (loaded in %s)", len(previous.Entries), time.Since(start).Round(time.Millisecond))
-	next := yearIndex{Version: 1, Corpus: corpus, Entries: make(map[int]yearEntry, len(s.texts))}
+	next := yearIndex{Version: bookIndexVersion, Corpus: corpus, Entries: make(map[int]yearEntry, len(s.texts))}
 	s.years = make(map[int]int, len(s.texts))
 	reused, read, known := 0, 0, 0
-	log.Printf("year index: checking %d installed books (cache %q)", len(s.texts), path)
 	lastReport := time.Now()
+	log.Printf("book index: reading publication years for %d books (%d already known from the old index)", len(s.texts), len(previous.Entries))
 	for id, textPath := range s.texts {
-		info, err := s.root.Stat(textPath)
-		if err != nil {
-			return fmt.Errorf("stat book %d: %w", id, err)
-		}
-		entry := yearEntry{Path: textPath, Size: info.Size(), Modified: info.ModTime().UnixNano()}
-		old, ok := previous.Entries[id]
-		if ok && old.Path == entry.Path && old.Size == entry.Size && old.Modified == entry.Modified {
-			entry.Year = old.Year
+		entry := yearEntry{Path: textPath}
+		if old, ok := previous.Entries[id]; ok && old.Path == textPath {
+			entry.Year = old.Year // An interrupted or older build already read this one.
 			reused++
 		} else {
 			f, err := s.root.Open(textPath)
@@ -106,18 +113,99 @@ func (s *Server) prepareYears(dir, path string) error {
 		}
 		if len(next.Entries)%2000 == 0 || time.Since(lastReport) > 10*time.Second {
 			lastReport = time.Now()
-			log.Printf("year index: %d/%d checked, %d cached, %d headers read", len(next.Entries), len(s.texts), reused, read)
+			log.Printf("book index: %d/%d years, %d reused, %d headers read, %s so far", len(next.Entries), len(s.texts), reused, read, time.Since(start).Round(time.Second))
 			if read > 0 {
+				// Checkpoint unfinished: a restart resumes without rereading headers.
 				if err := saveYearIndex(path, next); err != nil {
-					return fmt.Errorf("checkpoint year index: %w", err)
+					return fmt.Errorf("checkpoint book index: %w", err)
 				}
 			}
 		}
 	}
+	next.Complete = true
 	if err := saveYearIndex(path, next); err != nil {
-		return fmt.Errorf("save year index: %w", err)
+		return fmt.Errorf("save book index: %w", err)
 	}
-	log.Printf("year index ready: %d known, %d unknown; %d reused, %d headers read; %s", known, len(s.years)-known, reused, read, time.Since(start).Round(time.Millisecond))
+	saved := "not saved: no year_index_path"
+	if path != "" {
+		saved = "saved to " + path
+	}
+	log.Printf("book index: BUILT in %s; %d books, %d with a known year, %d without; %d years reused, %d headers read; %s",
+		time.Since(start).Round(time.Millisecond), len(s.texts), known, len(s.years)-known, reused, read, saved)
+	return nil
+}
+
+// readBookIndex returns the saved index, and an empty reason if it can be
+// trusted as it stands. Otherwise the reason says why a build is needed, and
+// whatever entries it has may still save rereading headers.
+func readBookIndex(path, corpus string) (yearIndex, string) {
+	if path == "" {
+		return yearIndex{}, "no year_index_path configured, so the index lives in memory only"
+	}
+	f, err := os.Open(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return yearIndex{}, "no index at " + path + " yet"
+	}
+	if err != nil {
+		return yearIndex{}, fmt.Sprintf("cannot open %s (%v)", path, err)
+	}
+	defer f.Close()
+	var index yearIndex
+	if err := json.NewDecoder(f).Decode(&index); err != nil {
+		return yearIndex{}, fmt.Sprintf("index at %s is unreadable (%v)", path, err)
+	}
+	switch {
+	case index.Corpus != corpus:
+		return yearIndex{}, fmt.Sprintf("index at %s is for %q, not %q", path, index.Corpus, corpus)
+	case index.Version != bookIndexVersion:
+		return index, fmt.Sprintf("index at %s is format version %d, and this server writes %d", path, index.Version, bookIndexVersion)
+	case !index.Complete:
+		return index, fmt.Sprintf("index at %s is from a build that never finished", path)
+	}
+	return index, ""
+}
+
+// scanBooks lists the corpus directory and finds each book's text file. It
+// only runs while building the index.
+func (s *Server) scanBooks() error {
+	start := time.Now()
+	s.texts = make(map[int]string)
+	f, err := s.root.Open(".")
+	if err != nil {
+		return err
+	}
+	entries, err := f.ReadDir(-1)
+	f.Close()
+	if err != nil {
+		return err
+	}
+	log.Printf("book scan: %d entries listed in %s; checking each for a text file", len(entries), time.Since(start).Round(time.Millisecond))
+	lastReport := time.Now()
+	for i, entry := range entries {
+		if i > 0 && (i%5000 == 0 || time.Since(lastReport) > 10*time.Second) {
+			lastReport = time.Now()
+			log.Printf("book scan: %d/%d entries checked, %d texts found, %s so far", i, len(entries), len(s.texts), time.Since(start).Round(time.Second))
+		}
+		name := entry.Name()
+		number := strings.TrimSuffix(name, ".txt")
+		id, err := strconv.Atoi(number)
+		if err != nil || id < 1 || number != strconv.Itoa(id) {
+			continue
+		}
+		path := name
+		nested := name == number
+		if nested {
+			path = number + "/pg" + number + ".txt"
+		}
+		info, err := s.root.Stat(path)
+		if err == nil && info.Mode().IsRegular() {
+			// Prefer the mirror copy when both layouts contain the same ID.
+			if nested || s.texts[id] == "" {
+				s.texts[id] = path
+			}
+		}
+	}
+	log.Printf("book scan: done, %d installed texts in %s", len(s.texts), time.Since(start).Round(time.Millisecond))
 	return nil
 }
 

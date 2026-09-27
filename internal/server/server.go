@@ -40,52 +40,13 @@ func New(c *catalog.Catalog, songs *lyrics.Store, dir string, indexPaths ...stri
 		return nil, fmt.Errorf("open corpus: %w", err)
 	}
 	s := &Server{catalog: c, songs: songs, root: root, mux: http.NewServeMux(), texts: make(map[int]string)}
-	// Discover paths without loading book bodies; persistent header indexing follows.
-	scanStart := time.Now()
-	log.Printf("book scan: listing %s", dir)
-	f, err := root.Open(".")
-	if err != nil {
-		root.Close()
-		return nil, err
-	}
-	entries, err := f.ReadDir(-1)
-	f.Close()
-	if err != nil {
-		root.Close()
-		return nil, err
-	}
-	log.Printf("book scan: %d entries listed in %s; checking each for a text file", len(entries), time.Since(scanStart).Round(time.Millisecond))
-	lastReport := time.Now()
-	for i, entry := range entries {
-		if i > 0 && (i%5000 == 0 || time.Since(lastReport) > 10*time.Second) {
-			lastReport = time.Now()
-			log.Printf("book scan: %d/%d entries checked, %d texts found, %s so far", i, len(entries), len(s.texts), time.Since(scanStart).Round(time.Second))
-		}
-		name := entry.Name()
-		number := strings.TrimSuffix(name, ".txt")
-		id, err := strconv.Atoi(number)
-		if err != nil || id < 1 || number != strconv.Itoa(id) {
-			continue
-		}
-		path := name
-		nested := name == number
-		if nested {
-			path = number + "/pg" + number + ".txt"
-		}
-		info, err := root.Stat(path)
-		if err == nil && info.Mode().IsRegular() {
-			// Prefer the mirror copy when both layouts contain the same ID.
-			if nested || s.texts[id] == "" {
-				s.texts[id] = path
-			}
-		}
-	}
-	log.Printf("book scan: done, %d installed texts in %s", len(s.texts), time.Since(scanStart).Round(time.Millisecond))
 	indexPath := ""
 	if len(indexPaths) > 0 {
 		indexPath = indexPaths[0]
 	}
-	if err := s.prepareYears(dir, indexPath); err != nil {
+	// The book index says which texts are installed and when each was first
+	// published. It is built once, ever, and trusted from then on.
+	if err := s.indexBooks(dir, indexPath); err != nil {
 		root.Close()
 		return nil, err
 	}

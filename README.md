@@ -177,9 +177,12 @@ fallback is used. A known year appears as `original_publication_year` in
 random-book, excerpt-source and individual-book responses.
 
 Header reads are bounded to 64 KiB and indexed **before serving requests**.
-The first startup builds a persistent index, logging progress and checkpointing
-every 2,000 books. Restarts reuse known and unknown years for unchanged files;
-only new or changed files (path, size or modification time) need header reads.
+The first startup builds a persistent book index: which texts are installed,
+and each book's original publication year. It says so loudly in the log
+("BUILDING IT ONCE"), reports progress and checkpoints every 2,000 books, so an
+interrupted build resumes without rereading headers. Once finished, the index
+is **trusted outright**: the Gutenberg mirror never changes, so later starts
+load it without listing the directory, checking a file or reading a header.
 Year/language selection uses sorted in-memory pools and binary search, with no
 request-time header reads or global lock. Excerpts still read their selected
 books to find prose.
@@ -189,8 +192,9 @@ Docker stores the index at `/srv/the-source/year-index.json` on The Lemon,
 bind-mounted at `/var/lib/source` in the container. This survives container
 rebuilds and removal. The development override uses a `source-state` named
 volume instead. The book mount remains read-only.
-Restart after corpus changes; remove only the index file if a forced rebuild
-is needed. Both random UI pages provide optional year controls.
+If the corpus ever does change, delete the index file and restart; nothing
+else triggers a rebuild. An index from an older version of the server, or for
+a different `books_dir`, is rebuilt automatically. Both random UI pages provide optional year controls.
 
 `GET /api/v1/books/excerpts/random?paragraphs=3` returns
 `{"book":{...},"paragraphs":["...","...","..."]}`. Paragraph count defaults to
@@ -299,9 +303,9 @@ The mirror layout is `<books_dir>/<id>/pg<id>.txt`; for example,
 `<books_dir>/<id>.txt` files also work; the mirror copy takes precedence if
 both exist. Indexing lists the corpus root and checks those exact candidate
 paths without recursively walking the archive or opening book contents.
-The corpus index is built from filenames at startup; restart after changing it
-or replacing the metadata. Header parsing for new/changed books also happens
-at startup; complete book contents are not loaded.
+The book index is built from filenames and headers once, then loaded on every
+later start; complete book contents are never loaded. Delete the index file and
+restart after changing the corpus.
 
 The service is read-only and has no authentication. Configure TLS/access
 controls at your existing reverse proxy if exposing it outside your server.

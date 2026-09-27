@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestPersistentYearIndex(t *testing.T) {
+func TestBookIndexIsBuiltOnceThenTrusted(t *testing.T) {
 	original := testServer(t)
 	dir := t.TempDir()
 	bookPath := filepath.Join(dir, "1.txt")
@@ -25,61 +25,111 @@ func TestPersistentYearIndex(t *testing.T) {
 		}
 		return s
 	}
+	read := func() yearIndex {
+		t.Helper()
+		data, err := os.ReadFile(cache)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var saved yearIndex
+		if err := json.Unmarshal(data, &saved); err != nil {
+			t.Fatal(err)
+		}
+		return saved
+	}
 	s := open()
-	if s.years[1] != 1927 {
-		t.Fatalf("cold index: %v", s.years)
+	if s.years[1] != 1927 || s.texts[1] != "1.txt" {
+		t.Fatalf("first build: %v %v", s.years, s.texts)
 	}
 	s.Close()
-	data, err := os.ReadFile(cache)
-	if err != nil {
-		t.Fatal(err)
+	if saved := read(); saved.Version != bookIndexVersion || !saved.Complete || len(saved.Entries) != 1 {
+		t.Fatalf("saved index: %+v", saved)
 	}
-	var saved yearIndex
-	if err := json.Unmarshal(data, &saved); err != nil {
-		t.Fatal(err)
-	}
-	// Mark the cache so a restart proves it reuses metadata, not just that
-	// parsing the same header happens to produce the same answer.
+	// Mark the cache so a restart proves it loads the index rather than
+	// happening to reread the same header.
+	saved := read()
 	entry := saved.Entries[1]
 	entry.Year = 1901
 	saved.Entries[1] = entry
 	if err := saveYearIndex(cache, saved); err != nil {
 		t.Fatal(err)
 	}
-	s = open()
-	if s.years[1] != 1901 {
-		t.Fatal("restart reread an unchanged header")
-	}
-	s.Close()
+	// The data never changes, so a finished index is trusted even when the
+	// disk disagrees: an edited book keeps its indexed year, and a deleted one
+	// stays listed. Deleting the index is how you ask for a rebuild.
 	if err := os.WriteFile(bookPath, []byte("Original publication: Different publisher, 1950\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
 	s = open()
-	if s.years[1] != 1950 {
-		t.Fatal("changed book did not refresh")
+	if s.years[1] != 1901 {
+		t.Fatal("a finished index was not trusted")
 	}
 	// Closing the corpus proves even a filtered random request needs no disk.
 	s.Close()
 	w := httptest.NewRecorder()
-	s.ServeHTTP(w, httptest.NewRequest("GET", "/api/v1/books/random?year_from=1950", nil))
+	s.ServeHTTP(w, httptest.NewRequest("GET", "/api/v1/books/random?year_from=1901", nil))
 	if w.Code != 200 {
 		t.Fatalf("request used disk: %d %s", w.Code, w.Body.String())
+	}
+	if err := os.Remove(cache); err != nil {
+		t.Fatal(err)
+	}
+	s = open()
+	s.Close()
+	if s.years[1] != 1950 {
+		t.Fatal("deleting the index did not rebuild it")
 	}
 	if err := os.WriteFile(cache, []byte("{corrupt"), 0600); err != nil {
 		t.Fatal(err)
 	}
 	s = open()
 	s.Close()
-	if s.years[1] != 1950 {
-		t.Fatal("corrupt cache was not rebuilt")
+	if s.years[1] != 1950 || !read().Complete {
+		t.Fatal("corrupt index was not rebuilt")
 	}
-	if err := os.Remove(bookPath); err != nil {
+}
+
+func TestUnfinishedOrOldIndexResumesWithoutRereadingHeaders(t *testing.T) {
+	original := testServer(t)
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "1.txt"), []byte("Original publication: Publisher, 1927\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	s = open()
-	defer s.Close()
-	if len(s.years) != 0 {
-		t.Fatal("deleted book retained")
+	corpus, _ := filepath.Abs(dir)
+	cache := filepath.Join(t.TempDir(), "years.json")
+	for _, stale := range []yearIndex{
+		{Version: bookIndexVersion, Corpus: corpus, Complete: false, Entries: map[int]yearEntry{1: {Path: "1.txt", Year: 1888}}},
+		{Version: 1, Corpus: corpus, Entries: map[int]yearEntry{1: {Path: "1.txt", Size: 5, Modified: 5, Year: 1888}}},
+	} {
+		if err := saveYearIndex(cache, stale); err != nil {
+			t.Fatal(err)
+		}
+		s, err := New(original.catalog, nil, dir, cache)
+		if err != nil {
+			t.Fatal(err)
+		}
+		s.Close()
+		// 1888 is not in the header: seeing it means the year was carried over.
+		if s.years[1] != 1888 {
+			t.Fatalf("version %d, complete %v: year %d, want the carried-over 1888", stale.Version, stale.Complete, s.years[1])
+		}
+		data, _ := os.ReadFile(cache)
+		var saved yearIndex
+		if json.Unmarshal(data, &saved) != nil || !saved.Complete || saved.Version != bookIndexVersion {
+			t.Fatalf("resumed index not finished: %s", data)
+		}
+	}
+	// An index for another directory is not trusted and not reused.
+	if err := saveYearIndex(cache, yearIndex{Version: bookIndexVersion, Corpus: "/elsewhere", Complete: true, Entries: map[int]yearEntry{1: {Path: "1.txt", Year: 1888}}}); err != nil {
+		t.Fatal(err)
+	}
+	s, err := New(original.catalog, nil, dir, cache)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.Close()
+	if s.years[1] != 1927 {
+		t.Fatalf("foreign index reused: %d", s.years[1])
 	}
 }
 

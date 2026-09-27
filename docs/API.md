@@ -81,7 +81,9 @@ catalog refreshes may move entries. Empty searches return 200 with an empty
 books array, not 404.
 
 `available=true` selects installed text, `available=false` missing text,
-and omission both. The index is built at startup; restart after corpus changes.
+and omission both. Which texts are installed comes from the book index, built
+once and then trusted: the corpus is assumed never to change. Delete the index
+file and restart to pick up changes.
 
 ## Publication years
 
@@ -94,10 +96,10 @@ one unambiguous four-digit year; uncertain/bracketed and multiple years are
 unknown. Unknown years are excluded when either bound is active. No copyright
 or Gutenberg release-date fallback exists.
 
-Header extraction reads at most 64 KiB per book during startup, before the
-HTTP listener opens. Known and unknown years persist across restarts in the
-configured year index. Unchanged files reuse cached metadata; new/changed files
-are parsed once. Language/year selection uses sorted in-memory indexes and
+Header extraction reads at most 64 KiB per book, once, while the book index is
+first built, before the HTTP listener opens. Known and unknown years persist in
+the configured year index, and later restarts load it without touching the
+books at all. Language/year selection uses sorted in-memory indexes and
 binary search with no request-time header reads. The first installation may
 take time to build its index; progress is logged. Docker preserves it in the
 `/srv/the-source` host directory (the dev override uses a named volume).
