@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/stevelittlefish/the-source/internal/catalog"
 	"github.com/stevelittlefish/the-source/internal/lyrics"
@@ -40,6 +41,8 @@ func New(c *catalog.Catalog, songs *lyrics.Store, dir string, indexPaths ...stri
 	}
 	s := &Server{catalog: c, songs: songs, root: root, mux: http.NewServeMux(), texts: make(map[int]string)}
 	// Discover paths without loading book bodies; persistent header indexing follows.
+	scanStart := time.Now()
+	log.Printf("book scan: listing %s", dir)
 	f, err := root.Open(".")
 	if err != nil {
 		root.Close()
@@ -51,7 +54,13 @@ func New(c *catalog.Catalog, songs *lyrics.Store, dir string, indexPaths ...stri
 		root.Close()
 		return nil, err
 	}
-	for _, entry := range entries {
+	log.Printf("book scan: %d entries listed in %s; checking each for a text file", len(entries), time.Since(scanStart).Round(time.Millisecond))
+	lastReport := time.Now()
+	for i, entry := range entries {
+		if i > 0 && (i%5000 == 0 || time.Since(lastReport) > 10*time.Second) {
+			lastReport = time.Now()
+			log.Printf("book scan: %d/%d entries checked, %d texts found, %s so far", i, len(entries), len(s.texts), time.Since(scanStart).Round(time.Second))
+		}
 		name := entry.Name()
 		number := strings.TrimSuffix(name, ".txt")
 		id, err := strconv.Atoi(number)
@@ -71,6 +80,7 @@ func New(c *catalog.Catalog, songs *lyrics.Store, dir string, indexPaths ...stri
 			}
 		}
 	}
+	log.Printf("book scan: done, %d installed texts in %s", len(s.texts), time.Since(scanStart).Round(time.Millisecond))
 	indexPath := ""
 	if len(indexPaths) > 0 {
 		indexPath = indexPaths[0]
@@ -79,7 +89,9 @@ func New(c *catalog.Catalog, songs *lyrics.Store, dir string, indexPaths ...stri
 		root.Close()
 		return nil, err
 	}
+	poolStart := time.Now()
 	s.buildPools()
+	log.Printf("random pools: %d languages built in %s", len(s.pools), time.Since(poolStart).Round(time.Millisecond))
 	s.mux.HandleFunc("/api/", s.api)
 	s.mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" && r.Method != "HEAD" {

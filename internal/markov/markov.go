@@ -25,6 +25,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"time"
 	"unicode"
 	"unicode/utf8"
 )
@@ -89,19 +90,37 @@ type Result struct {
 
 func key(previous, current uint32) uint64 { return uint64(previous)<<32 | uint64(current) }
 
-// LoadDir loads every *.json.gz in dir as a chain named after its file.
-func LoadDir(dir string) ([]*Chain, error) {
+// LoadDir loads every *.json.gz in dir as a chain named after its file. If
+// logf is not nil it narrates each file, because a 20 MB model takes long
+// enough to look like a hang.
+func LoadDir(dir string, logf func(string, ...any)) ([]*Chain, error) {
 	paths, err := filepath.Glob(filepath.Join(dir, "*.json.gz"))
 	if err != nil {
 		return nil, err
 	}
 	sort.Strings(paths)
+	if logf == nil {
+		logf = func(string, ...any) {}
+	}
+	logf("markov: %d model files in %s", len(paths), dir)
 	chains := make([]*Chain, 0, len(paths))
 	for _, path := range paths {
+		started := time.Now()
+		size := int64(0)
+		if info, err := os.Stat(path); err == nil {
+			size = info.Size()
+		}
+		logf("markov: loading %s (%.1f MB)", filepath.Base(path), float64(size)/1e6)
 		chain, err := Load(path)
 		if err != nil {
 			return nil, err
 		}
+		edges := 0
+		for _, e := range chain.next {
+			edges += len(e)
+		}
+		logf("markov: %s ready in %s: %s chain, trained on %d, %d words, %d states, %d transitions",
+			chain.Name, time.Since(started).Round(time.Millisecond), chain.Kind, chain.Trained, len(chain.words), len(chain.next), edges)
 		chains = append(chains, chain)
 	}
 	return chains, nil

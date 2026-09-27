@@ -12,7 +12,7 @@ import (
 func markovServer(t *testing.T) *Server {
 	t.Helper()
 	s := testServer(t)
-	chains, err := markov.LoadDir("../../testdata/markov")
+	chains, err := markov.LoadDir("../../testdata/markov", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

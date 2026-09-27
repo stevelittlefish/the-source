@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"runtime/debug"
 	"syscall"
 	"time"
@@ -69,16 +70,27 @@ func ensureLyricsDB(dbPath, csvPath string) error {
 func main() {
 	path := flag.String("config", "source.dev.toml", "TOML configuration file")
 	flag.Parse()
+	// Startup narrates itself. A server that is silently statting 70,000 files
+	// looks exactly like a server that has died, and only one of them is fine.
+	boot := time.Now()
+	log.Printf("startup: reading config %s", *path)
 	c, err := config.Load(*path)
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("startup: config ok; catalog %s, books %s, lyrics db %q, markov %q, year index %s, listen %s",
+		c.CatalogPath, c.BooksDir, c.LyricsDBPath, c.MarkovDir, c.YearIndexPath, c.ServerAddr)
+	step := time.Now()
+	log.Printf("startup: loading book catalog %s", c.CatalogPath)
 	books, err := catalog.LoadFile(c.CatalogPath)
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("startup: catalog loaded, %d books, in %s", len(books.Search("", "")), time.Since(step).Round(time.Millisecond))
 	var songs *lyrics.Store
 	if c.LyricsDBPath != "" {
+		step = time.Now()
+		log.Printf("startup: opening lyrics database %s", c.LyricsDBPath)
 		if err := ensureLyricsDB(c.LyricsDBPath, c.LyricsCSVPath); err != nil {
 			log.Fatal(err)
 		}
@@ -87,29 +99,36 @@ func main() {
 			log.Fatal(err)
 		}
 		defer songs.Close()
-		log.Printf("lyrics corpus: %s", c.LyricsDBPath)
+		log.Printf("lyrics corpus: %s (opened in %s)", c.LyricsDBPath, time.Since(step).Round(time.Millisecond))
+	} else {
+		log.Printf("startup: no lyrics_db_path; lyrics endpoints are off")
 	}
+	step = time.Now()
+	log.Printf("startup: building server over book directory %s", c.BooksDir)
 	app, err := server.New(books, songs, c.BooksDir, c.YearIndexPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer app.Close()
+	log.Printf("startup: server built in %s", time.Since(step).Round(time.Millisecond))
 	if c.MarkovDir != "" {
 		// Every chain lives in memory for the life of the process: a few
 		// seconds and a few hundred MB, in exchange for millisecond batches.
 		started := time.Now()
-		chains, err := markov.LoadDir(c.MarkovDir)
+		log.Printf("startup: loading markov chains from %s", c.MarkovDir)
+		chains, err := markov.LoadDir(c.MarkovDir, log.Printf)
 		if err != nil {
 			log.Fatal(err)
 		}
-		for _, chain := range chains {
-			log.Printf("markov chain %s: %s model trained on %d", chain.Name, chain.Kind, chain.Trained)
-		}
-		log.Printf("loaded %d markov chains from %s in %s", len(chains), c.MarkovDir, time.Since(started).Round(time.Millisecond))
 		app.SetChains(chains)
 		// Decoding the models leaves a heap full of spent JSON tokens; hand it
 		// back now rather than wearing it for the life of the process.
 		debug.FreeOSMemory()
+		var mem runtime.MemStats
+		runtime.ReadMemStats(&mem)
+		log.Printf("startup: %d markov chains ready in %s; Go heap now %d MB", len(chains), time.Since(started).Round(time.Millisecond), mem.HeapAlloc>>20)
+	} else {
+		log.Printf("startup: no markov_dir; markov endpoints list no chains")
 	}
 	srv := &http.Server{Addr: c.ServerAddr, Handler: app, ReadHeaderTimeout: 5 * time.Second, IdleTimeout: 60 * time.Second}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -125,6 +144,7 @@ func main() {
 		}
 		close(done)
 	}()
+	log.Printf("startup: complete in %s", time.Since(boot).Round(time.Millisecond))
 	log.Printf("THE SOURCE — books on tap, plumbing included. Listening on %s", c.ServerAddr)
 	if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)

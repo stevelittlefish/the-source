@@ -69,12 +69,17 @@ func (s *Server) prepareYears(dir, path string) error {
 		}
 	}
 	if previous.Version != 1 || previous.Corpus != corpus {
+		if len(previous.Entries) > 0 {
+			log.Printf("year index: cache is for another corpus or version; every header will be read again")
+		}
 		previous = yearIndex{}
 	}
+	log.Printf("year index: cache has %d entries (loaded in %s)", len(previous.Entries), time.Since(start).Round(time.Millisecond))
 	next := yearIndex{Version: 1, Corpus: corpus, Entries: make(map[int]yearEntry, len(s.texts))}
 	s.years = make(map[int]int, len(s.texts))
 	reused, read, known := 0, 0, 0
 	log.Printf("year index: checking %d installed books (cache %q)", len(s.texts), path)
+	lastReport := time.Now()
 	for id, textPath := range s.texts {
 		info, err := s.root.Stat(textPath)
 		if err != nil {
@@ -99,7 +104,8 @@ func (s *Server) prepareYears(dir, path string) error {
 		if entry.Year != 0 {
 			known++
 		}
-		if len(next.Entries)%2000 == 0 {
+		if len(next.Entries)%2000 == 0 || time.Since(lastReport) > 10*time.Second {
+			lastReport = time.Now()
 			log.Printf("year index: %d/%d checked, %d cached, %d headers read", len(next.Entries), len(s.texts), reused, read)
 			if read > 0 {
 				if err := saveYearIndex(path, next); err != nil {

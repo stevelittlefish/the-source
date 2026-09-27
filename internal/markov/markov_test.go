@@ -12,7 +12,7 @@ import (
 
 func fixtures(t *testing.T) map[string]*Chain {
 	t.Helper()
-	chains, err := LoadDir("../../testdata/markov")
+	chains, err := LoadDir("../../testdata/markov", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
