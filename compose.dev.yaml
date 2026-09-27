@@ -18,9 +18,3 @@ services:
         read_only: true
         bind:
           create_host_path: false
-      - type: bind
-        source: ./testdata/markov
-        target: /data/markov
-        read_only: true
-        bind:
-          create_host_path: false

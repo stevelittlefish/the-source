@@ -8,7 +8,9 @@ The Source is a small, API-first server over two corpora:
   search, individual records, random selection and random excerpts.
 - **Markov chains** — word-pair models trained on those lyrics by the
   SongInspirationEngine, generating new song titles and verses on demand, in
-  batches of up to 100. Optional: they load from `markov_dir` at startup.
+  batches of up to 100. The four models (about 50 MB) are committed in
+  `markov/`; to update one, retrain it in the SongInspirationEngine, copy the
+  `.json.gz` over its namesake here, commit and redeploy.
 
 Both are equal features of the service, served side by side under
 `/api/v1/books` and `/api/v1/lyrics` with parallel web UIs at `/books` and
@@ -272,7 +274,7 @@ server_addr = "127.0.0.1:45068"
 lyrics_db_path = "testdata/lyrics.db"
 lyrics_csv_path = "song_lyrics_en.csv"
 # Optional Markov chains: every NAME.json.gz in here becomes chain NAME.
-markov_dir = "testdata/markov"
+markov_dir = "markov"
 ```
 
 Paths are relative to the config file. Unknown settings and duplicate TOML keys
@@ -327,20 +329,9 @@ One mount supplies both metadata and books. The adjacent `txt-files.tar.zip`
 is ignored; the service reads the extracted files. Neither books nor metadata
 are baked into the image.
 
-It also mounts `/mnt/data/markov` read-only at `/data/markov`. Copy the
-SongInspirationEngine's chain models there, named after the chain you want:
-
-```sh
-# from a SongInspirationEngine checkout; scp them if that isn't on The Lemon
-cp assets/title-markov/pop-titles.json.gz assets/title-markov/rock-titles.json.gz \
-   assets/verse-markov/pop-verses.json.gz assets/verse-markov/rock-verses.json.gz \
-   /mnt/data/markov/
-docker compose restart source
-```
-
-All four load into memory at startup: a few seconds and about 300 MB. The
-server logs each chain it loads. An empty directory means no chains, not an
-error.
+The Markov chains need no mount: they are committed in `markov/` and copied
+into the image. They load into memory at startup, which takes a few seconds and
+about 500 MB, and the server logs each chain it loads.
 
 For development, explicitly enable the fixture override:
 

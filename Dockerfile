@@ -9,6 +9,8 @@ RUN mkdir -p /out/state
 FROM scratch
 COPY --from=build /out/the-source /the-source
 COPY source.docker.toml /etc/source.toml
+# The Markov chains are small enough (about 50 MB) to ride along in the image.
+COPY markov/ /markov/
 COPY --from=build /out/state/ /var/lib/source/
 USER 0:0
 EXPOSE 45068

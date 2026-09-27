@@ -6,7 +6,7 @@ lyrics_db_path = "/data/lyrics/lyrics.db"
 # this CSV on first start (one-time, several minutes). Drop the CSV beside the
 # database and the deployment needs no separate prep step.
 lyrics_csv_path = "/data/lyrics/song_lyrics_en.csv"
-# SongInspirationEngine Markov chains, one NAME.json.gz each, loaded at startup.
-# An empty or missing directory just means no chains.
-markov_dir = "/data/markov"
+# SongInspirationEngine Markov chains, committed in markov/ and copied into the
+# image by the Dockerfile. One NAME.json.gz each, loaded at startup.
+markov_dir = "/markov"
 server_addr = ":45068"
