@@ -931,7 +931,7 @@
       "get": {
         "operationId": "generateMarkov",
         "summary": "Generate titles or verses from a Markov chain",
-        "description": "Generates count results (default 1, at most 100) from one chain. Title chains return one line per result, 2-12 words, never an exact training title, with apostrophes restored to contractions (\"Don't\"). Verse chains return 4-8 lines per result, and no line of four or more words appears in a real training verse. Use seed for a repeatable batch.",
+        "description": "Generates count results (default 1, at most 100) from one chain. Title chains return one line per result, 2-12 words, never an exact training title. Verse chains return 4-8 lines per result, and no line of four or more words appears in a real training verse. Use seed for a repeatable batch.",
         "parameters": [
           {
             "name": "name",

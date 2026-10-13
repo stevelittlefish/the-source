@@ -198,7 +198,7 @@ func (c *Chain) decode(dec *json.Decoder, intern func(string) uint32) error {
 			}
 			c.titles = make(map[string]struct{}, len(titles))
 			for _, title := range titles {
-				c.titles[restoreTitle(strings.Fields(title))] = struct{}{}
+				c.titles[title] = struct{}{}
 			}
 		case "copy_lines":
 			var hashes []string
@@ -336,12 +336,11 @@ func (c *Chain) title(rng *rand.Rand) (Result, error) {
 			}
 			token := c.choose(edges, rng)
 			if token == endID {
-				if _, copied := c.titles[restoreTitle(words)]; len(words) >= 2 && !copied {
-					out := make([]string, len(words))
+				if _, copied := c.titles[strings.Join(words, " ")]; len(words) >= 2 && !copied {
 					for i, word := range words {
-						out[i] = capitalise(restoreApostrophe(word))
+						words[i] = capitalise(word)
 					}
-					text := strings.Join(out, " ")
+					text := strings.Join(words, " ")
 					return Result{Text: text, Lines: []string{text}}, nil
 				}
 				break
@@ -397,48 +396,6 @@ func (c *Chain) verse(rng *rand.Rand) (Result, error) {
 		}
 	}
 	return Result{}, ErrNoResult
-}
-
-// The Genius title column lost every straight apostrophe (curly ones
-// survived), so title chains learned "dont" far more often than "don’t". This
-// puts them back. Words that are also ordinary words the other way round
-// ("were", "well", "hell", "shell", "wed") are left alone; "its", "ill" and
-// "id" go to the contraction, which is what song titles mean nearly every time.
-var contractions = map[string]string{
-	"aint": "ain't", "arent": "aren't", "cant": "can't", "cmon": "c'mon",
-	"couldnt": "couldn't", "couldve": "could've", "didnt": "didn't",
-	"doesnt": "doesn't", "dont": "don't", "hadnt": "hadn't", "hasnt": "hasn't",
-	"havent": "haven't", "hes": "he's", "heres": "here's", "hows": "how's",
-	"id": "i'd", "ill": "i'll", "im": "i'm", "isnt": "isn't", "its": "it's",
-	"ive": "i've", "lets": "let's", "maam": "ma'am", "mustnt": "mustn't",
-	"oclock": "o'clock", "shes": "she's", "shouldnt": "shouldn't",
-	"shouldve": "should've", "thats": "that's", "theres": "there's",
-	"theyd": "they'd", "theyll": "they'll", "theyre": "they're",
-	"theyve": "they've", "wasnt": "wasn't", "werent": "weren't", "weve": "we've",
-	"whats": "what's", "wheres": "where's", "whos": "who's", "wont": "won't",
-	"wouldnt": "wouldn't", "wouldve": "would've", "yall": "y'all",
-	"youd": "you'd", "youll": "you'll", "youre": "you're", "youve": "you've",
-}
-
-// restoreApostrophe gives a title word its apostrophe back and straightens a
-// curly one, so "dont" and "don’t" both come out as "don't".
-func restoreApostrophe(word string) string {
-	word = strings.ReplaceAll(word, "’", "'")
-	if fixed, ok := contractions[word]; ok {
-		return fixed
-	}
-	return word
-}
-
-// restoreTitle is the copy guard's key: a lower-case title with apostrophes
-// restored, so "dont stop me now" cannot sneak out as "Don't Stop Me Now"
-// just because training also saw "don’t stop me now".
-func restoreTitle(words []string) string {
-	out := make([]string, len(words))
-	for i, word := range words {
-		out[i] = restoreApostrophe(word)
-	}
-	return strings.Join(out, " ")
 }
 
 // dressLine capitalises I, I'm, I'll... and the first letter of the line.

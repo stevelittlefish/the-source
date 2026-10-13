@@ -200,8 +200,6 @@ curl -s 'localhost:45068/api/v1/markov/rock-verses?count=3&seed=42'
   `count` asks for a batch of 1-100 results (default 1). `seed` makes the
   batch repeatable and is echoed back; without it every call is fresh.
 - **Titles** are one line of 2-12 words, never an exact training title.
-  Contractions get their apostrophes back ("Don't", "I'm"), which the
-  Genius title data had stripped.
 - **Verses** are 4-8 lines. No line of four or more words is copied from a
   real training verse; shorter stock phrases ("oh baby") are allowed. `text`
   is the lines joined with newlines.

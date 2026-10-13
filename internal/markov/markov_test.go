@@ -6,7 +6,6 @@ import (
 	"math/rand/v2"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"testing"
 )
@@ -48,9 +47,6 @@ func TestTitlesAreNewAndCapitalised(t *testing.T) {
 		}
 		if _, copied := c.titles[strings.ToLower(r.Text)]; copied {
 			t.Fatalf("copied a training title: %q", r.Text)
-		}
-		if strings.Contains(r.Text, "’") || slices.Contains(words, "Dont") || slices.Contains(words, "Im") {
-			t.Fatalf("apostrophes not restored in %q", r.Text)
 		}
 		for _, w := range words {
 			if first := []rune(w)[0]; strings.ToUpper(string(first)) != string(first) {
@@ -97,20 +93,6 @@ func TestLineHashMatchesTrainer(t *testing.T) {
 	}
 	if got := lineHash([]string{"i", "walk", "the", "line"}); got != want {
 		t.Fatalf("lineHash = %x, want %x", got, want)
-	}
-}
-
-func TestRestoreApostrophe(t *testing.T) {
-	for in, want := range map[string]string{
-		"dont": "don't", "don’t": "don't", "im": "i'm", "i’m": "i'm",
-		"were": "were", "well": "well", "love": "love",
-	} {
-		if got := restoreApostrophe(in); got != want {
-			t.Errorf("restoreApostrophe(%q) = %q, want %q", in, got, want)
-		}
-	}
-	if got := restoreTitle([]string{"dont", "stop", "me", "now"}); got != "don't stop me now" {
-		t.Fatalf("restoreTitle: %q", got)
 	}
 }
 
